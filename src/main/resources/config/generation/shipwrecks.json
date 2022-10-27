@@ -1,0 +1,1 @@
+{"name":"shipwrecks","spawnGroups":[{"name":"shipwreck-01","conditions":[{"name":"sector-type","value":"ASTEROID"}],"spawns":[{"name":"shipwreck-01","bpName":"shipwreck-01","weight":0.035}]}]}

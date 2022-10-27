@@ -1,13 +1,12 @@
 package thederpgamer.lorefulloot;
 
-import api.listener.Listener;
-import api.listener.events.entity.SegmentControllerSpawnEvent;
 import api.mod.StarLoader;
 import api.mod.StarMod;
-import org.schema.game.common.data.player.inventory.NoSlotFreeException;
-import org.schema.game.common.data.world.SimpleTransformableSendableObject;
+import thederpgamer.lorefulloot.data.commands.CreateWreckCommand;
+import thederpgamer.lorefulloot.data.commands.ForceGenerateCommand;
 import thederpgamer.lorefulloot.manager.ConfigManager;
-import thederpgamer.lorefulloot.manager.LootManager;
+import thederpgamer.lorefulloot.manager.EventManager;
+import thederpgamer.lorefulloot.manager.GenerationManager;
 import thederpgamer.lorefulloot.utils.DataUtils;
 
 import java.io.File;
@@ -37,7 +36,9 @@ public class LorefulLoot extends StarMod {
 		instance = this;
 		ConfigManager.initialize(this);
 		initLogger();
-		registerListeners();
+		EventManager.initialize(this);
+		GenerationManager.initialize();
+		registerCommands();
 	}
 
 	private void initLogger() {
@@ -76,18 +77,8 @@ public class LorefulLoot extends StarMod {
 		}
 	}
 
-	private void registerListeners() {
-		StarLoader.registerListener(SegmentControllerSpawnEvent.class, new Listener<SegmentControllerSpawnEvent>() {
-			@Override
-			public void onEvent(SegmentControllerSpawnEvent event) {
-				if(event.getController().isNewlyCreated() && event.getController().getType().equals(SimpleTransformableSendableObject.EntityType.SPACE_STATION) && event.getController().getSpawner().equals("")) {
-					try {
-						LootManager.generateLoot(event.getController()); //Station was naturally spawned, generate loot
-					} catch(NoSlotFreeException exception) {
-						throw new RuntimeException(exception);
-					}
-				}
-			}
-		}, this);
+	private void registerCommands() {
+		StarLoader.registerCommand(new CreateWreckCommand());
+		StarLoader.registerCommand(new ForceGenerateCommand());
 	}
 }

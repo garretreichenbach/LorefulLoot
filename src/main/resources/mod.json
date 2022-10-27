@@ -1,9 +1,9 @@
 {
   "name": "LorefulLoot",
   "author": "TheDerpGamer",
-  "description": "Updates the derelict and npc stations with loot and lore!",
+  "description": "Adds naturally spawning wrecks filled with loot.",
   "version": "1.0.0",
-  "starmade_version": "0.203.115",
+  "starmade_version": "0.203.132",
   "client_mod": false,
   "server_mod": false,
   "main_class": "thederpgamer.lorefulloot.LorefulLoot",

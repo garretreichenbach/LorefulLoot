@@ -4,6 +4,8 @@ import api.common.GameClient;
 import api.common.GameCommon;
 import thederpgamer.lorefulloot.LorefulLoot;
 
+import java.io.File;
+import java.io.InputStream;
 import java.util.logging.Level;
 
 public class DataUtils {
@@ -20,6 +22,13 @@ public class DataUtils {
 				LorefulLoot.log.log(Level.WARNING,"Client " + GameClient.getClientPlayerState().getName() + " attempted to illegally access server data.");
 			} catch(Exception ignored) { }
 			return null;
+		}
+	}
+
+	public static void copyInputStreamToFile(InputStream inputStream, File file) {
+		try {
+		} catch(Exception exception) {
+			throw new RuntimeException(exception);
 		}
 	}
 }
