@@ -45,5 +45,6 @@ public class ItemStack {
 
 	public void addTo(Inventory inventory) {
 		inventory.putNextFreeSlot(id, count, 0);
+		inventory.sendAll();
 	}
 }

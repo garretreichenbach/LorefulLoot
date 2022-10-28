@@ -25,7 +25,7 @@ public class EntitySpawn {
 		this.weight = weight;
 		this.factionId = 0;
 		this.factionName = "Unknown";
-		this.loreName = name + "_" + (new Random().nextInt(9999) + 1000);
+		this.loreName = name + "_" + (new Random().nextInt(99999) + 10000);
 		this.itemStacks = new ItemStack[0];
 	}
 
@@ -81,8 +81,9 @@ public class EntitySpawn {
 	}
 
 	public String getLoreName() {
-		if(loreName == null) loreName = name + "_" + (new Random().nextInt(9999) + 1000);
-		return loreName;
+		//if(loreName == null) loreName = name + "_" + (new Random().nextInt(9999) + 1000);
+		//return loreName;
+		return name + "_" + (new Random().nextInt(9999) + 1000);
 	}
 
 	public void setLoreName(String loreName) {

@@ -1,8 +1,11 @@
 package thederpgamer.lorefulloot.utils;
 
+import api.utils.StarRunnable;
 import com.bulletphysics.linearmath.Transform;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.schema.common.util.linAlg.Vector3i;
+import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
 import org.schema.game.common.controller.Ship;
 import org.schema.game.common.controller.damage.DamageDealerType;
@@ -11,14 +14,18 @@ import org.schema.game.common.controller.damage.effects.InterEffectHandler;
 import org.schema.game.common.controller.damage.effects.InterEffectSet;
 import org.schema.game.common.controller.damage.effects.MetaWeaponEffectInterface;
 import org.schema.game.common.controller.elements.ModuleExplosion;
-import org.schema.game.common.controller.elements.VoidElementManager;
 import org.schema.game.common.data.ManagedSegmentController;
 import org.schema.game.common.data.SegmentPiece;
 import org.schema.game.common.data.player.AbstractOwnerState;
+import org.schema.game.common.data.player.inventory.Inventory;
 import org.schema.game.common.data.world.SimpleTransformableSendableObject;
 import org.schema.schine.network.StateInterface;
+import thederpgamer.lorefulloot.LorefulLoot;
+import thederpgamer.lorefulloot.data.ItemStack;
+import thederpgamer.lorefulloot.data.generation.EntitySpawn;
 
 import javax.vecmath.Vector3f;
+import java.util.Random;
 
 /**
  * [Description]
@@ -32,57 +39,67 @@ public class MiscUtils {
 	 * @param entity Entity to wreck.
 	 * <p>Note: Make sure you save a copy of your ship before using this function!</p>
 	 */
-	public static void wreckShip(SegmentController entity) {
-		((Ship) entity).getManagerContainer().getShieldAddOn().setShields(0);
-		((Ship) entity).getManagerContainer().getShieldAddOn().setShieldCapacityHP(0);
-		((Ship) entity).getManagerContainer().getShieldAddOn().setRegenEnabled(false);
+	public static void wreckShip(final SegmentController entity, final EntitySpawn entitySpawn) {
+		(new Thread() {
+			@Override
+			public void run() {
+				try {
+					while(!entity.isFullyLoadedWithDock()) {
+						Thread.sleep(100);
+					}
+				} catch(Exception exception) {
+					exception.printStackTrace();
+				}
 
-		Vector3f min = entity.getMinPos().toVector3f();
-		Vector3f max = entity.getMaxPos().toVector3f();
-		Vector3f size = new Vector3f();
-		size.sub(max, min);
-		int explosionCap = 15;
-		float radius = size.length();
-		LongArrayList l = new LongArrayList(explosionCap);
-		for(int i = 0; i < explosionCap; i++) {
-			l.add(getRandomIndex(entity, 0));
-		}
-		ModuleExplosion expl =
-				new ModuleExplosion(l,
-						VoidElementManager.COLLECTION_INTEGRITY_EXPLOSION_RATE,
-						(int) radius,
-						50000000,
-						getRandomIndex(entity, 0),
-						ModuleExplosion.ExplosionCause.INTEGRITY,
-						entity.getBoundingBox());
+				for(int j = 0; j < 5; j ++) {
+					((Ship) entity).getManagerContainer().getShieldAddOn().setShields(0);
+					((Ship) entity).getManagerContainer().getShieldAddOn().setShieldCapacityHP(0);
+					((Ship) entity).getManagerContainer().getShieldAddOn().setRegenEnabled(false);
 
-		expl.setChain(true);
-		((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
+					Vector3f min = entity.getMinPos().toVector3f();
+					Vector3f max = entity.getMaxPos().toVector3f();
+					Vector3f size = new Vector3f();
+					size.sub(max, min);
+					int explosionCap = 15;
+					float radius = Math.min(Math.max(size.length(), 5), 12);
+					LongArrayList l = new LongArrayList(explosionCap);
+					for(int i = 0; i < explosionCap; i++) {
+						l.add(getRandomIndex(entity, 0));
+					}
+					ModuleExplosion expl =
+							new ModuleExplosion(l,
+									10,
+									(int) radius,
+									50000000,
+									getRandomIndex(entity, 0),
+									ModuleExplosion.ExplosionCause.INTEGRITY,
+									entity.getBoundingBox());
 
-		/*
-		while(explosions < explosionCap) {
-			((EditableSendableSegmentController) entity).addExplosion(
-					new WreckDamager(entity),
-					DamageDealerType.EXPLOSIVE,
-					HitType.GENERAL,
-					Long.MIN_VALUE,
-					getRandomHullPoint(entity, 0),
-					radius,
-					5000000,
-					true,
-					new AfterExplosionCallback() {
-						@Override
-						public void onExplosionDone() {
+					expl.setChain(true);
+					((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
+				}
+			}
+		}).start();
 
+		new StarRunnable() {
+			@Override
+			public void run() {
+				if(entitySpawn != null) {
+					ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) entity).getInventories().inventoriesList;
+					for(Inventory inventory : inventories) {
+						try {
+							for(ItemStack item : entitySpawn.getItems()) {
+								Random random = new Random();
+								if(random.nextFloat() <= item.getWeight()) item.addTo(inventory);
+							}
+						} catch(Exception exception) {
+							LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to add items to entity " + entitySpawn.getName() + " in sector " + entity.getSector(new Vector3i()) + "!");
 						}
-					}, ExplosionData.INNER | ExplosionData.IGNORESHIELDS_GLOBAL);
-
-
-			explosions ++;
-		}
-
-
-		 */
+					}
+					LorefulLoot.log.log(java.util.logging.Level.INFO, "Spawned entity " + entitySpawn.getName() + " in sector " + entity.getSector(new Vector3i()) + "!");
+				}
+			}
+		}.runLater(LorefulLoot.getInstance(), 30);
 	}
 
 	private static long getRandomIndex(SegmentController entity, int attempts) {
@@ -98,7 +115,7 @@ public class MiscUtils {
 		if(attempts < 30) {
 			if(segmentPiece == null || segmentPiece.getType() == 0) return getRandomIndex(entity, attempts + 1);
 		}
-		return segmentPiece.getAbsoluteIndex();
+		return 0;
 	}
 
 	private static Transform getRandomHullPoint(SegmentController entity, int attempts) {

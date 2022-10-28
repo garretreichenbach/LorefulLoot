@@ -2,13 +2,12 @@ package thederpgamer.lorefulloot.manager;
 
 import com.bulletphysics.linearmath.Transform;
 import com.google.gson.Gson;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.apache.commons.io.FileUtils;
-import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
+import org.schema.game.common.controller.rails.RailRelation;
+import org.schema.game.common.data.element.ElementInformation;
 import org.schema.game.common.data.element.ElementKeyMap;
 import org.schema.game.common.data.player.PlayerState;
-import org.schema.game.common.data.player.inventory.Inventory;
 import org.schema.game.common.data.world.Sector;
 import org.schema.game.common.data.world.SectorInformation;
 import org.schema.game.server.controller.BluePrintController;
@@ -23,7 +22,9 @@ import thederpgamer.lorefulloot.data.generation.EntitySpawn;
 import thederpgamer.lorefulloot.data.generation.GenerationConfig;
 import thederpgamer.lorefulloot.data.generation.SpawnCondition;
 import thederpgamer.lorefulloot.data.generation.SpawnGroup;
+import thederpgamer.lorefulloot.data.other.EntitySanitizerExecutor;
 import thederpgamer.lorefulloot.utils.DataUtils;
+import thederpgamer.lorefulloot.utils.MiscUtils;
 
 import javax.vecmath.Vector3f;
 import java.io.File;
@@ -31,6 +32,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 
 /**
  * [Description]
@@ -38,29 +41,54 @@ import java.util.Random;
  * @author TheDerpGamer (MrGoose#0027)
  */
 public class GenerationManager {
+	public static final HashMap<String, GenerationConfig> configMap = new HashMap<>();
+	private static final String[] defaultBps = {
+			"B110-11", "B130-7", "B150-18", "B190-21", "C120-12", "C140-9"
+	};
 	private static final String[] defaultConfigs = {
 			"/config/generation/shipwrecks.json"
 	};
-	public static final HashMap<String, GenerationConfig> configMap = new HashMap<>();
 
-	public static void main(String[] args) {
+	private static Short[] deprecatedElements;
+
+	public static void genDefaults() {
 		GenerationConfig config = new GenerationConfig();
 		config.setName("shipwrecks");
-		config.setSpawnGroups(new SpawnGroup[] {
-				new SpawnGroup("shipwreck-01", new SpawnCondition[] {
-						new SpawnCondition("sector-type", SectorInformation.SectorType.ASTEROID.name())
-				}, new EntitySpawn[] {
-						new EntitySpawn("shipwreck-01", "shipwreck-01", 0.035f, new ItemStack[] {
-								new ItemStack(ElementKeyMap.REACTOR_MAIN, 194, 0.45f),
-								new ItemStack(ElementKeyMap.REACTOR_STABILIZER, 144, 0.4f),
-								new ItemStack(ElementKeyMap.CORE_ID, 35, 0.37f),
-						})
-				})
-		});
+		SpawnGroup[] spawnGroups = new SpawnGroup[1];
+		EntitySpawn[] asteroidSpawns = new EntitySpawn[defaultBps.length];
+		for(int i = 0; i < defaultBps.length; i++) asteroidSpawns[i] = new EntitySpawn(defaultBps[i] + " [Derelict]", defaultBps[i], 0.0025f, generateRandomItemStacks(5, 10));
+		spawnGroups[0] = new SpawnGroup("asteroids", new SpawnCondition[]{new SpawnCondition("sector-type", SectorInformation.SectorType.ASTEROID.name())}, asteroidSpawns);
+		config.setSpawnGroups(spawnGroups);
 		try {
-			FileUtils.writeStringToFile(new File("C:/Users/garre/OneDrive - Arizona State University/Documents/GitHub/LorefulLoot/src/main/resources/config/generation/shipwrecks.json"), new Gson().toJson(config));
+			File file = new File("C:/Users/garre/OneDrive - Arizona State University/Documents/GitHub/LorefulLoot/src/main/resources/config/generation/shipwrecks.json");
+			if(file.exists()) file.delete();
+			file.createNewFile();
+			FileUtils.writeStringToFile(file, new Gson().toJson(config));
 		} catch(Exception exception) {
 			exception.printStackTrace();
+			LorefulLoot.log.log(Level.WARNING, "Failed to generate default config file!", exception);
+		}
+		configMap.put(config.getName(), config);
+	}
+
+	private static ItemStack[] generateRandomItemStacks(int min, int max) {
+		Random random = new Random();
+		int amount = random.nextInt(max - min) + min;
+		ItemStack[] itemStacks = new ItemStack[amount];
+		for(int i = 0; i < amount; i++) itemStacks[i] = new ItemStack(getRandomItem(), random.nextInt(1000), random.nextFloat());
+		return itemStacks;
+	}
+
+	private static short getRandomItem() {
+		try {
+			Random random = new Random();
+			ElementInformation[] items = ElementKeyMap.getInfoArray();
+			ElementInformation item = items[random.nextInt(items.length)];
+			if(item.isDeprecated() || ! item.isShoppable()) return getRandomItem();
+			else return item.getId();
+		} catch(Exception exception) {
+			exception.printStackTrace();
+			return 1;
 		}
 	}
 
@@ -94,13 +122,13 @@ public class GenerationManager {
 				configMap.put(defaultConfigFile.getName().replace(".json", ""), new Gson().fromJson(FileUtils.readFileToString(defaultConfigFile), GenerationConfig.class));
 			}
 		} catch(Exception exception) {
-			throw new RuntimeException(exception);
+			exception.printStackTrace();
 		}
 	}
 
 	private static File getGenerationFolder() {
 		File generationFolder = new File(DataUtils.getWorldDataPath(), "generation");
-		if(!generationFolder.exists()) generationFolder.mkdirs();
+		if(! generationFolder.exists()) generationFolder.mkdirs();
 		return generationFolder;
 	}
 
@@ -127,19 +155,20 @@ public class GenerationManager {
 					break;
 			}
 		} catch(Exception exception) {
+			exception.printStackTrace();
 			LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to generate for sector " + sector.pos + "!");
 		}
 	}
 
-	private static void createEntity(EntitySpawn entitySpawn, Sector sector) {
+	private static void createEntity(final EntitySpawn entitySpawn, final Sector sector) {
 		SegmentControllerOutline<?> scOutline = null;
 		try {
 			scOutline = BluePrintController.active.loadBluePrint(
 					GameServerState.instance,
 					entitySpawn.getBpName(),
 					entitySpawn.getLoreName(),
-					getRandomTransformInSector(sector),
-					-1,
+					getRandomTransformInSector(),
+					- 1,
 					entitySpawn.getFactionId(),
 					sector.pos,
 					entitySpawn.getFactionName(),
@@ -170,21 +199,17 @@ public class GenerationManager {
 		}
 
 		if(segmentController != null) {
-			ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) segmentController).getInventories().inventoriesList;
-			for(Inventory inventory : inventories) {
-				try {
-					for(ItemStack item : entitySpawn.getItems()) {
-						Random random = new Random();
-						if(random.nextFloat() <= item.getWeight()) item.addTo(inventory);
-					}
-				} catch(Exception exception) {
-					LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to add items to entity " + entitySpawn.getName() + " in sector " + sector.pos + "!");
-				}
-			}
+			segmentController.getSegmentBuffer().restructBB();
+			MiscUtils.wreckShip(segmentController, entitySpawn);
 		}
 	}
 
-	private static Transform getRandomTransformInSector(Sector sector) {
+	public static void sanitizeEntity(final SegmentController entity, PlayerState player) throws ExecutionException, InterruptedException {
+		EntitySanitizerExecutor.compute(entity, player);
+		for(RailRelation relation : entity.railController.next) sanitizeEntity(relation.docked.getSegmentController(), player);
+	}
+
+	private static Transform getRandomTransformInSector() {
 		//Gen Random Position
 		int sectorSize = (Integer) ServerConfig.SECTOR_SIZE.getCurrentState();
 		int x = (int) (Math.random() * sectorSize);

@@ -46,7 +46,7 @@ public class CreateWreckCommand implements CommandInterface {
 			return true;
 		}
 		try {
-			MiscUtils.wreckShip((SegmentController) PlayerUtils.getCurrentControl(sender));
+			MiscUtils.wreckShip((SegmentController) PlayerUtils.getCurrentControl(sender), null);
 		} catch(Exception exception) {
 			LorefulLoot.log.log(Level.WARNING, "Failed to create wreck!", exception);
 			PlayerUtils.sendMessage(sender, "Failed to create wreck! Check the server logs for more information.");
