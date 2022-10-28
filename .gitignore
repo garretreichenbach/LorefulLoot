@@ -17,5 +17,3 @@ gradle-app.setting
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
 /starmade/
-starmade/.cache/userData/DevTools Extensions
-starmade/StarMade/data/config/BACKUP/BlockConfig.xml
