@@ -1,5 +1,7 @@
 package thederpgamer.lorefulloot.data.generation;
 
+import thederpgamer.lorefulloot.data.ItemStack;
+
 import java.util.Random;
 
 /**
@@ -15,6 +17,7 @@ public class EntitySpawn {
 	private int factionId;
 	private String factionName;
 	private String loreName;
+	private ItemStack[] itemStacks;
 
 	public EntitySpawn(String name, String bpName, float weight) {
 		this.name = name;
@@ -23,6 +26,17 @@ public class EntitySpawn {
 		this.factionId = 0;
 		this.factionName = "Unknown";
 		this.loreName = name + "_" + (new Random().nextInt(9999) + 1000);
+		this.itemStacks = new ItemStack[0];
+	}
+
+	public EntitySpawn(String name, String bpName, float weight, ItemStack[] itemStacks) {
+		this.name = name;
+		this.bpName = bpName;
+		this.weight = weight;
+		this.factionId = factionId;
+		this.factionName = factionName;
+		this.loreName = loreName;
+		this.itemStacks = itemStacks;
 	}
 
 	public String getName() {
@@ -58,6 +72,7 @@ public class EntitySpawn {
 	}
 
 	public String getFactionName() {
+		if(factionName == null) factionName = "Unknown";
 		return factionName;
 	}
 
@@ -66,10 +81,19 @@ public class EntitySpawn {
 	}
 
 	public String getLoreName() {
+		if(loreName == null) loreName = name + "_" + (new Random().nextInt(9999) + 1000);
 		return loreName;
 	}
 
 	public void setLoreName(String loreName) {
 		this.loreName = loreName;
+	}
+
+	public ItemStack[] getItems() {
+		return itemStacks;
+	}
+
+	public void setItems(ItemStack[] itemStacks) {
+		this.itemStacks = itemStacks;
 	}
 }

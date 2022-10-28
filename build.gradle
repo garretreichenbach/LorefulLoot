@@ -11,7 +11,7 @@ def starmadeDirectory = 'C:/Program Files (x86)/Steam/steamapps/common/StarMade/
 def jarName = 'LorefulLoot'
 mainClassName = 'thederpgamer.lorefulloot.LorefulLoot'
 group 'thederpgamer.lorefulloot'
-version '1.0.0'
+version '1.0.0 - Kessler'
 
 repositories {
     mavenCentral()

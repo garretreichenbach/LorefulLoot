@@ -16,7 +16,7 @@ public class EventManager {
 		StarLoader.registerListener(AsteroidPreSpawnEvent.class, new Listener<AsteroidPreSpawnEvent>() {
 			@Override
 			public void onEvent(AsteroidPreSpawnEvent event) {
-				//GenerationManager.generateForSector(event.getSector());
+				GenerationManager.generateForSector(event.getSector(), false);
 			}
 		}, instance);
 

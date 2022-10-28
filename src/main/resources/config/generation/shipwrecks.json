@@ -1,1 +1,1 @@
-{"name":"shipwrecks","spawnGroups":[{"name":"shipwreck-01","conditions":[{"name":"sector-type","value":"ASTEROID"}],"spawns":[{"name":"shipwreck-01","bpName":"shipwreck-01","weight":0.035}]}]}
+{"name":"shipwrecks","spawnGroups":[{"name":"shipwreck-01","conditions":[{"name":"sector-type","value":"ASTEROID"}],"spawns":[{"name":"shipwreck-01","bpName":"shipwreck-01","weight":0.035,"factionId":0,"itemStacks":[{"id":1008,"count":194,"weight":0.45},{"id":1009,"count":144,"weight":0.4},{"id":1,"count":35,"weight":0.37}]}]}]}

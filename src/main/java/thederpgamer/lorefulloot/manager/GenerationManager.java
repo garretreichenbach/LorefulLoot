@@ -2,8 +2,13 @@ package thederpgamer.lorefulloot.manager;
 
 import com.bulletphysics.linearmath.Transform;
 import com.google.gson.Gson;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.apache.commons.io.FileUtils;
+import org.schema.game.common.controller.ManagedUsableSegmentController;
+import org.schema.game.common.controller.SegmentController;
+import org.schema.game.common.data.element.ElementKeyMap;
 import org.schema.game.common.data.player.PlayerState;
+import org.schema.game.common.data.player.inventory.Inventory;
 import org.schema.game.common.data.world.Sector;
 import org.schema.game.common.data.world.SectorInformation;
 import org.schema.game.server.controller.BluePrintController;
@@ -13,6 +18,7 @@ import org.schema.game.server.data.blueprint.ChildStats;
 import org.schema.game.server.data.blueprint.SegmentControllerOutline;
 import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirect;
 import thederpgamer.lorefulloot.LorefulLoot;
+import thederpgamer.lorefulloot.data.ItemStack;
 import thederpgamer.lorefulloot.data.generation.EntitySpawn;
 import thederpgamer.lorefulloot.data.generation.GenerationConfig;
 import thederpgamer.lorefulloot.data.generation.SpawnCondition;
@@ -44,7 +50,11 @@ public class GenerationManager {
 				new SpawnGroup("shipwreck-01", new SpawnCondition[] {
 						new SpawnCondition("sector-type", SectorInformation.SectorType.ASTEROID.name())
 				}, new EntitySpawn[] {
-						new EntitySpawn("shipwreck-01", "shipwreck-01", 0.035f)
+						new EntitySpawn("shipwreck-01", "shipwreck-01", 0.035f, new ItemStack[] {
+								new ItemStack(ElementKeyMap.REACTOR_MAIN, 194, 0.45f),
+								new ItemStack(ElementKeyMap.REACTOR_STABILIZER, 144, 0.4f),
+								new ItemStack(ElementKeyMap.CORE_ID, 35, 0.37f),
+						})
 				})
 		});
 		try {
@@ -56,6 +66,10 @@ public class GenerationManager {
 
 	public static void initialize() {
 		File generationFolder = getGenerationFolder();
+		if(generationFolder.listFiles() == null || generationFolder.listFiles().length == 0) {
+			loadDefaultConfigs(generationFolder);
+			return;
+		}
 		try {
 			for(File file : Objects.requireNonNull(generationFolder.listFiles())) {
 				if(file.getName().endsWith(".json")) {
@@ -77,6 +91,7 @@ public class GenerationManager {
 				File defaultConfigFile = new File(generationFolder, path.substring(path.lastIndexOf("/") + 1));
 				assert defaultConfigStream != null;
 				FileUtils.copyInputStreamToFile(defaultConfigStream, defaultConfigFile);
+				configMap.put(defaultConfigFile.getName().replace(".json", ""), new Gson().fromJson(FileUtils.readFileToString(defaultConfigFile), GenerationConfig.class));
 			}
 		} catch(Exception exception) {
 			throw new RuntimeException(exception);
@@ -89,7 +104,7 @@ public class GenerationManager {
 		return generationFolder;
 	}
 
-	public static void generateForSector(Sector sector) {
+	public static void generateForSector(Sector sector, boolean force) {
 		try {
 			switch(sector.getSectorType()) {
 				case ASTEROID:
@@ -101,7 +116,7 @@ public class GenerationManager {
 										if(sector.getSectorType().name().equals(spawnCondition.getValue())) {
 											for(EntitySpawn entitySpawn : spawnGroup.getSpawns()) {
 												Random random = new Random();
-												if(random.nextFloat() <= entitySpawn.getWeight()) createEntity(entitySpawn, sector);
+												if(random.nextFloat() <= entitySpawn.getWeight() || force) createEntity(entitySpawn, sector);
 											}
 										}
 										break;
@@ -137,9 +152,10 @@ public class GenerationManager {
 			LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to create entity " + entitySpawn.getName() + " in sector " + sector.pos + "!");
 		}
 
+		SegmentController segmentController = null;
 		if(scOutline != null) {
 			try {
-				scOutline.spawn(
+				segmentController = scOutline.spawn(
 						sector.pos,
 						false,
 						new ChildStats(false),
@@ -150,6 +166,20 @@ public class GenerationManager {
 						});
 			} catch(Exception exception) {
 				LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to spawn entity " + entitySpawn.getName() + " in sector " + sector.pos + "!");
+			}
+		}
+
+		if(segmentController != null) {
+			ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) segmentController).getInventories().inventoriesList;
+			for(Inventory inventory : inventories) {
+				try {
+					for(ItemStack item : entitySpawn.getItems()) {
+						Random random = new Random();
+						if(random.nextFloat() <= item.getWeight()) item.addTo(inventory);
+					}
+				} catch(Exception exception) {
+					LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to add items to entity " + entitySpawn.getName() + " in sector " + sector.pos + "!");
+				}
 			}
 		}
 	}

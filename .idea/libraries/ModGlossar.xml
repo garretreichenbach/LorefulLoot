@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="ModGlossar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/ModGlossar.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
