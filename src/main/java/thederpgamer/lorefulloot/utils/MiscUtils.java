@@ -4,6 +4,8 @@ import api.utils.StarRunnable;
 import com.bulletphysics.linearmath.Transform;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.schema.common.util.StringTools;
+import org.schema.common.util.linAlg.Vector3b;
 import org.schema.common.util.linAlg.Vector3i;
 import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
@@ -14,15 +16,24 @@ import org.schema.game.common.controller.damage.effects.InterEffectHandler;
 import org.schema.game.common.controller.damage.effects.InterEffectSet;
 import org.schema.game.common.controller.damage.effects.MetaWeaponEffectInterface;
 import org.schema.game.common.controller.elements.ModuleExplosion;
+import org.schema.game.common.controller.rails.RailRelation;
 import org.schema.game.common.data.ManagedSegmentController;
 import org.schema.game.common.data.SegmentPiece;
+import org.schema.game.common.data.element.ElementKeyMap;
+import org.schema.game.common.data.element.meta.Logbook;
+import org.schema.game.common.data.element.meta.MetaObjectManager;
 import org.schema.game.common.data.player.AbstractOwnerState;
 import org.schema.game.common.data.player.inventory.Inventory;
+import org.schema.game.common.data.player.inventory.InventorySlot;
+import org.schema.game.common.data.player.inventory.StashInventory;
+import org.schema.game.common.data.world.Segment;
 import org.schema.game.common.data.world.SimpleTransformableSendableObject;
 import org.schema.schine.network.StateInterface;
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.data.ItemStack;
+import thederpgamer.lorefulloot.data.generation.EntityLore;
 import thederpgamer.lorefulloot.data.generation.EntitySpawn;
+import thederpgamer.lorefulloot.manager.GenerationManager;
 
 import javax.vecmath.Vector3f;
 import java.util.Random;
@@ -61,20 +72,18 @@ public class MiscUtils {
 					Vector3f size = new Vector3f();
 					size.sub(max, min);
 					int explosionCap = 15;
-					float radius = Math.min(Math.max(size.length(), 5), 12);
+					float radius = 10;
+					if(entity.getName().contains("Small")) radius = 3;
+					else if(entity.getName().contains("Medium")) radius = 5;
 					LongArrayList l = new LongArrayList(explosionCap);
-					for(int i = 0; i < explosionCap; i++) {
-						l.add(getRandomIndex(entity, 0));
-					}
-					ModuleExplosion expl =
-							new ModuleExplosion(l,
-									10,
-									(int) radius,
-									50000000,
-									getRandomIndex(entity, 0),
-									ModuleExplosion.ExplosionCause.INTEGRITY,
-									entity.getBoundingBox());
-
+					for(int i = 0; i < explosionCap; i++) l.add(getRandomIndex(entity, 0));
+					ModuleExplosion expl = new ModuleExplosion(l,
+							10,
+							(int) radius,
+							50000000,
+							getRandomIndex(entity, 0),
+							ModuleExplosion.ExplosionCause.INTEGRITY,
+							entity.getBoundingBox());
 					expl.setChain(true);
 					((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
 				}
@@ -84,36 +93,88 @@ public class MiscUtils {
 		new StarRunnable() {
 			@Override
 			public void run() {
-				if(entitySpawn != null) {
-					ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) entity).getInventories().inventoriesList;
-					for(Inventory inventory : inventories) {
-						try {
-							for(ItemStack item : entitySpawn.getItems()) {
-								Random random = new Random();
-								if(random.nextFloat() <= item.getWeight()) item.addTo(inventory);
-							}
-						} catch(Exception exception) {
-							LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to add items to entity " + entitySpawn.getName() + " in sector " + entity.getSector(new Vector3i()) + "!");
-						}
-					}
-					LorefulLoot.log.log(java.util.logging.Level.INFO, "Spawned entity " + entitySpawn.getName() + " in sector " + entity.getSector(new Vector3i()) + "!");
-				}
+				genItems(entity, entitySpawn);
 			}
 		}.runLater(LorefulLoot.getInstance(), 30);
 	}
 
+	private static void genItems(SegmentController entity, EntitySpawn entitySpawn) {
+		if(entitySpawn != null) {
+			ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) entity).getInventories().inventoriesList;
+			if(entitySpawn.getEntityLore() != null) {
+				Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) - 1, true);
+				String fullText = entitySpawn.getEntityLore().getHeader() + "\n" + entitySpawn.getEntityLore().getContent();
+				fullText = StringTools.wrap(fullText, 80);
+				logbook.setTxt(fullText);
+				Inventory inventory = inventories.get((new Random()).nextInt(inventories.size()));
+				try {
+					inventory.put(inventory.getFreeSlot(), logbook);
+					inventory.sendAll();
+				} catch(Exception exception) {
+					LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to add items to entity " + entitySpawn.getName() + " in sector " + entity.getSector(new Vector3i()) + "!", exception);
+					exception.printStackTrace();
+				}
+			} else {
+				EntityLore entityLore = GenerationManager.generateRandomLore();
+				if(entityLore != null) {
+					Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) - 1, true);
+					String fullText = entityLore.getHeader() + "\n" + entityLore.getContent();
+					fullText = StringTools.wrap(fullText, 80);
+					logbook.setTxt(fullText);
+					Inventory inventory = inventories.get((new Random()).nextInt(inventories.size()));
+					try {
+						inventory.put(inventory.getFreeSlot(), logbook);
+						inventory.sendAll();
+					} catch(Exception exception) {
+						exception.printStackTrace();
+					}
+				}
+			}
+
+			for(Inventory inventory : inventories) {
+				try {
+					if(entitySpawn.getItems() == null) {
+						ItemStack[] itemStacks = GenerationManager.generateRandomItemStacks(5, 30);
+						for(ItemStack item : itemStacks) item.addTo(inventory);
+					} else for(ItemStack item : entitySpawn.getItems()) item.addTo(inventory);
+					inventory.sendAll();
+				} catch(Exception exception) {
+					LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to add items to entity " + entitySpawn.getName() + " in sector " + entity.getSector(new Vector3i()) + "!", exception);
+					exception.printStackTrace();
+				}
+			}
+			LorefulLoot.log.log(java.util.logging.Level.INFO, "Spawned entity " + entitySpawn.getName() + " in sector " + entity.getSector(new Vector3i()) + "!");
+		}
+		for(RailRelation relation : entity.railController.next) {
+			if(relation.rail != null) {
+				if(relation.rail.getSegmentController() != entity) genItems(relation.rail.getSegmentController(), entitySpawn);
+			}
+		}
+	}
+
 	private static long getRandomIndex(SegmentController entity, int attempts) {
-		Vector3f min = entity.getBoundingBox().min;
-		Vector3f max = entity.getBoundingBox().max;
+		Vector3f min = new Vector3f(entity.getMinPos().x, entity.getMinPos().y, entity.getMinPos().z);
+		Vector3f max = new Vector3f(entity.getMaxPos().x, entity.getMaxPos().y, entity.getMaxPos().z);
 		Vector3f size = new Vector3f();
 		size.sub(max, min);
 		Vector3f randomPos = new Vector3f();
 		randomPos.x = min.x + (float) Math.random() * size.x;
 		randomPos.y = min.y + (float) Math.random() * size.y;
 		randomPos.z = min.z + (float) Math.random() * size.z;
-		SegmentPiece segmentPiece = entity.getSegmentBuffer().getPointUnsave(new Vector3i(randomPos));
+		Segment segment = entity.getSegmentBuffer().get(new Vector3i(randomPos));
 		if(attempts < 30) {
-			if(segmentPiece == null || segmentPiece.getType() == 0) return getRandomIndex(entity, attempts + 1);
+			if(segment == null) return getRandomIndex(entity, attempts + 1);
+			else {
+				Vector3b segmentMin = segment.getSegmentData().getMin();
+				Vector3b segmentMax = segment.getSegmentData().getMax();
+				Vector3b segmentSize = new Vector3b(segmentMax);
+				segmentSize.sub(segmentMin);
+				Vector3b randomSegmentPos = new Vector3b();
+				randomSegmentPos.x = (byte) (segmentMin.x + (int) (Math.random() * segmentSize.x));
+				randomSegmentPos.y = (byte) (segmentMin.y + (int) (Math.random() * segmentSize.y));
+				randomSegmentPos.z = (byte) (segmentMin.z + (int) (Math.random() * segmentSize.z));
+				return segment.getAbsoluteIndex(randomSegmentPos.x, randomSegmentPos.y, randomSegmentPos.z);
+			}
 		}
 		return 0;
 	}

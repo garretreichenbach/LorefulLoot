@@ -13,7 +13,7 @@ public class ItemStack {
 	private int count;
 	private float weight;
 
-	public ItemStack(short id, int count, float weight) {
+	public ItemStack(short id, int count) {
 		this.id = id;
 		this.count = count;
 		this.weight = weight;
@@ -45,6 +45,5 @@ public class ItemStack {
 
 	public void addTo(Inventory inventory) {
 		inventory.putNextFreeSlot(id, count, 0);
-		inventory.sendAll();
 	}
 }

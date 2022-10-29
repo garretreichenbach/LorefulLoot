@@ -18,6 +18,7 @@ public class EntitySpawn {
 	private String factionName;
 	private String loreName;
 	private ItemStack[] itemStacks;
+	private EntityLore entityLore;
 
 	public EntitySpawn(String name, String bpName, float weight) {
 		this.name = name;
@@ -96,5 +97,13 @@ public class EntitySpawn {
 
 	public void setItems(ItemStack[] itemStacks) {
 		this.itemStacks = itemStacks;
+	}
+
+	public EntityLore getEntityLore() {
+		return entityLore;
+	}
+
+	public void setEntityLore(EntityLore entityLore) {
+		this.entityLore = entityLore;
 	}
 }

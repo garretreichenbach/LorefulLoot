@@ -25,15 +25,7 @@ public class EntitySanitizerExecutor {
 	private final static LongArrayList toRemove = new LongArrayList();
 	private static final int MAX_THREADS = 32;
 
-	private static class Result {
-		private final int wait;
-		public Result(int code) {
-			this.wait = code;
-		}
-	}
-
-	public static int compute(Segment segment) throws Exception {
-		int count = 0;
+	public static void compute(Segment segment) {
 		SegmentController entity = segment.getSegmentController();
 		Vector3b minPos = new Vector3b(segment.getSegmentData().getMin());
 		Vector3b maxPos = new Vector3b(segment.getSegmentData().getMax());
@@ -41,17 +33,14 @@ public class EntitySanitizerExecutor {
 			for(int y1 = minPos.y; y1 <= maxPos.y; y1++) {
 				for(int z1 = minPos.z; z1 <= maxPos.z; z1++) {
 					long index = segment.getAbsoluteIndex((byte) x1, (byte) y1, (byte) z1);
-					if(entity.getSegmentBuffer().existsPointUnsave(index) && entity.getSegmentBuffer().getPointUnsave(index).getInfo().isDeprecated()) {
-						toRemove.add(index);
-						count ++;
-					}
+					if(entity.getSegmentBuffer().existsPointUnsave(index) && entity.getSegmentBuffer().getPointUnsave(index).getInfo().isDeprecated()) toRemove.add(index);
 				}
 			}
 		}
-		return count;
 	}
 
 	public static void compute(SegmentController entity, PlayerState playerState) throws InterruptedException, ExecutionException {
+		long start = System.currentTimeMillis();
 		toRemove.clear();
 		Vector3i min = new Vector3i(entity.getSegmentBuffer().getBoundingBox().min);
 		Vector3i max = new Vector3i(entity.getSegmentBuffer().getBoundingBox().max);
@@ -64,7 +53,6 @@ public class EntitySanitizerExecutor {
 				}
 			}
 		}
-		final int[] totalCount = {0};
 		ObjectArrayList<Callable<StarRunnable>> tasks = new ObjectArrayList<>();
 		for(final Segment segment : segments) {
 			tasks.add(new Callable<StarRunnable>() {
@@ -74,7 +62,7 @@ public class EntitySanitizerExecutor {
 						@Override
 						public void run() {
 							try {
-								totalCount[0] += compute(segment);
+								compute(segment);
 							} catch(Exception exception) {
 								exception.printStackTrace();
 							}
@@ -100,9 +88,9 @@ public class EntitySanitizerExecutor {
 					piece.applyToSegment(entity.isOnServer());
 				} catch(Exception ignored) {}
 			}
-
-			LorefulLoot.log.log(java.util.logging.Level.INFO, "Removed " + totalCount[0] + " deprecated blocks from entity " + entity.getName() + "!");
-			PlayerUtils.sendMessage(playerState, "Removed " + totalCount[0] + " deprecated blocks from entity " + entity.getName() + "!");
+			long time = System.currentTimeMillis() - start;
+			LorefulLoot.log.log(java.util.logging.Level.INFO, "Removed deprecated blocks from entity " + entity.getName() + " in " + time + "ms.");
+			PlayerUtils.sendMessage(playerState, "Removed deprecated blocks from entity " + entity.getName() + " in " + time + "ms.");
 		}
 	}
 }

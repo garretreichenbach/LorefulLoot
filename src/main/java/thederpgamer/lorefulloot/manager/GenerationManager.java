@@ -16,18 +16,17 @@ import org.schema.game.server.data.ServerConfig;
 import org.schema.game.server.data.blueprint.ChildStats;
 import org.schema.game.server.data.blueprint.SegmentControllerOutline;
 import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirect;
+import org.schema.schine.input.InputState;
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.data.ItemStack;
-import thederpgamer.lorefulloot.data.generation.EntitySpawn;
-import thederpgamer.lorefulloot.data.generation.GenerationConfig;
-import thederpgamer.lorefulloot.data.generation.SpawnCondition;
-import thederpgamer.lorefulloot.data.generation.SpawnGroup;
+import thederpgamer.lorefulloot.data.generation.*;
 import thederpgamer.lorefulloot.data.other.EntitySanitizerExecutor;
 import thederpgamer.lorefulloot.utils.DataUtils;
 import thederpgamer.lorefulloot.utils.MiscUtils;
 
 import javax.vecmath.Vector3f;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Objects;
@@ -43,20 +42,18 @@ import java.util.logging.Level;
 public class GenerationManager {
 	public static final HashMap<String, GenerationConfig> configMap = new HashMap<>();
 	private static final String[] defaultBps = {
-			"B110-11", "B130-7", "B150-18", "B190-21", "C120-12", "C140-9"
+			"Small-Shipwreck-01", "Small-Shipwreck-02", "Small-Shipwreck-03", "Small-Shipwreck-04", "Medium-Shipwreck-01", "Medium-Shipwreck-02"
 	};
 	private static final String[] defaultConfigs = {
 			"/config/generation/shipwrecks.json"
 	};
-
-	private static Short[] deprecatedElements;
 
 	public static void genDefaults() {
 		GenerationConfig config = new GenerationConfig();
 		config.setName("shipwrecks");
 		SpawnGroup[] spawnGroups = new SpawnGroup[1];
 		EntitySpawn[] asteroidSpawns = new EntitySpawn[defaultBps.length];
-		for(int i = 0; i < defaultBps.length; i++) asteroidSpawns[i] = new EntitySpawn(defaultBps[i] + " [Derelict]", defaultBps[i], 0.0025f, generateRandomItemStacks(5, 10));
+		for(int i = 0; i < defaultBps.length; i++) asteroidSpawns[i] = new EntitySpawn(defaultBps[i] + " [Derelict]", defaultBps[i], 0.0025f, null);
 		spawnGroups[0] = new SpawnGroup("asteroids", new SpawnCondition[]{new SpawnCondition("sector-type", SectorInformation.SectorType.ASTEROID.name())}, asteroidSpawns);
 		config.setSpawnGroups(spawnGroups);
 		try {
@@ -71,12 +68,44 @@ public class GenerationManager {
 		configMap.put(config.getName(), config);
 	}
 
-	private static ItemStack[] generateRandomItemStacks(int min, int max) {
+	public static ItemStack[] generateRandomItemStacks(int min, int max) {
 		Random random = new Random();
 		int amount = random.nextInt(max - min) + min;
 		ItemStack[] itemStacks = new ItemStack[amount];
-		for(int i = 0; i < amount; i++) itemStacks[i] = new ItemStack(getRandomItem(), random.nextInt(1000), random.nextFloat());
+		for(int i = 0; i < amount; i++) {
+			short itemId = getRandomItem();
+			int stackSize = new Random().nextInt(50000) + 1;
+			itemStacks[i] = new ItemStack(itemId, stackSize);
+		}
 		return itemStacks;
+	}
+
+	public static EntityLore generateRandomLore() {
+		try {
+			InputStream fileInputStream = LorefulLoot.class.getResourceAsStream("/config/lore.json");
+			File output = new File(DataUtils.getWorldDataPath() + "/lore.json");
+			if(!output.exists()) {
+				output.createNewFile();
+				assert fileInputStream != null;
+				FileUtils.copyInputStreamToFile(fileInputStream, output);
+			}
+		} catch(Exception exception) {
+			exception.printStackTrace();
+			LorefulLoot.log.log(Level.WARNING, "Failed to generate default lore file!", exception);
+		}
+
+		File file = new File(DataUtils.getWorldDataPath() + "/lore.json");
+		try {
+			String json = FileUtils.readFileToString(file);
+			LoreCategory loreCategory = new Gson().fromJson(json, LoreCategory.class);
+			for(EntityLore entityLore : loreCategory.getValues()) {
+				if((new Random()).nextFloat() < entityLore.getWeight()) return entityLore;
+			}
+		} catch(Exception exception) {
+			exception.printStackTrace();
+			LorefulLoot.log.log(Level.WARNING, "Failed to load lore file!", exception);
+		}
+		return null;
 	}
 
 	private static short getRandomItem() {
@@ -84,7 +113,7 @@ public class GenerationManager {
 			Random random = new Random();
 			ElementInformation[] items = ElementKeyMap.getInfoArray();
 			ElementInformation item = items[random.nextInt(items.length)];
-			if(item.isDeprecated() || ! item.isShoppable()) return getRandomItem();
+			if(item.isDeprecated() || !item.isShoppable() || !item.isInRecipe()) return getRandomItem();
 			else return item.getId();
 		} catch(Exception exception) {
 			exception.printStackTrace();

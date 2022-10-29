@@ -1,5 +1,6 @@
 {
-    "shipwrecks": [
+    "name": "shipwrecks",
+    "values": [
         {
             "name": "Survey Woes",
             "header": "Captain's Log [10.5.3122]:",
@@ -34,7 +35,7 @@
             "header": "Captain's Log [11.15.3117]:",
             "content": "Captain’s Log [11.15.3117]: \nIf there was one thing I’ve despised most about our journeys, it has to be the constant harassment from raiders. I knew this region of the galaxy was filled with criminal scum, but I assumed the Guild would provide us escorts.\n\nThe only reason we are still alive is due to my head diplomat, who is incredibly gifted at her job. Even so, we have still had to hand over credits occasionally to some of the more persistent pirates.\n\nThe problem is that these bandits are only interested in profit and some excitement. I would hate to believe that someone actually views these sorts of ruffians as potential business partners. Yet I have heard rumors of corruption and even some collaboration in parts of the Guild’s upper command…",
             "type": "LOG",
-            "weight": 0.27,
+            "weight": 0.8,
             "conditions": [
                 {
                     "name": "adjacent-sector-contains",
@@ -48,12 +49,7 @@
             "content": "Our medical bay is once again full. Someone has brought another alien virus on board, and it is rampaging through the rest of our fleet. The doctors are trying to work to contain it, but the best they can do is keep it from killing everybody. I just spoke to Captains Vila and Raus, together we are the only 3 captains still untouched by the virus in our fleet. They arrived on the asteroid base where the virus started in hopes of discovering anything new, but time is running out. Fleet Command is either unwilling or unable to lend assistance, and I don’t think we can rely on Dr. Rahamadal’s so called “miracle cure” that he supposedly is working on. I am doing everything I can to prepare the crew for what might be a harsh few months ahead…",
             "type": "LOG",
             "weight": 0.27,
-            "conditions": [
-                {
-                    "name": "sector-contains",
-                    "value": "entity:asteroid_base_wrecked[0]"
-                }
-            ]
+            "conditions": []
         },
         {
             "name": "Frustrating Response",
@@ -62,23 +58,6 @@
             "type": "COMMUNICATION",
             "weight": 0.2,
             "conditions": []
-        },
-        {
-            "name": "Sacrifices",
-            "header": "Communication Log [5.5.3121]:",
-            "content": "[ECG-Murklow] Unidentified vessel, please turn on your transponder to continue docking.\n\n[ECG-Murklow] Unidentified vessel, you must lower your speed to avoid a crash. Turn on your transponder and respond or you will be fired upon.\n\n[ECG-Pentas?] This is Captain uh… Bill? Requesting to dock.\n\n[ECG-Murklow] Negative Pentas, stop your engines and prepare to be inspected. Your transponder corresponds to Captain Bill Morden, who is long deceased.\n\n[ECG-Pentas?] … For the revolution.\n\n-TRANSMISSION CUT-",
-            "type": "COMMUNICATION",
-            "weight": 0.65,
-            "conditions": [
-                {
-                    "name": "sector-contains",
-                    "value": "entity:station_wrecked[0]"
-                },
-                {
-                    "name": "sector-contains",
-                    "value": "entity:ship_wrecked[0]"
-                }
-            ]
         }
     ]
 }
