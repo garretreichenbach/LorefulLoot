@@ -3,20 +3,22 @@ package thederpgamer.lorefulloot.manager;
 import com.bulletphysics.linearmath.Transform;
 import com.google.gson.Gson;
 import org.apache.commons.io.FileUtils;
+import org.schema.game.common.controller.FloatingRock;
 import org.schema.game.common.controller.SegmentController;
+import org.schema.game.common.controller.Ship;
+import org.schema.game.common.controller.SpaceStation;
 import org.schema.game.common.controller.rails.RailRelation;
 import org.schema.game.common.data.element.ElementInformation;
 import org.schema.game.common.data.element.ElementKeyMap;
 import org.schema.game.common.data.player.PlayerState;
 import org.schema.game.common.data.world.Sector;
-import org.schema.game.common.data.world.SectorInformation;
+import org.schema.game.common.data.world.SimpleTransformableSendableObject;
 import org.schema.game.server.controller.BluePrintController;
 import org.schema.game.server.data.GameServerState;
 import org.schema.game.server.data.ServerConfig;
 import org.schema.game.server.data.blueprint.ChildStats;
 import org.schema.game.server.data.blueprint.SegmentControllerOutline;
 import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirect;
-import org.schema.schine.input.InputState;
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.data.ItemStack;
 import thederpgamer.lorefulloot.data.generation.*;
@@ -26,7 +28,6 @@ import thederpgamer.lorefulloot.utils.MiscUtils;
 
 import javax.vecmath.Vector3f;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Objects;
@@ -52,14 +53,13 @@ public class GenerationManager {
 		GenerationConfig config = new GenerationConfig();
 		config.setName("shipwrecks");
 		SpawnGroup[] spawnGroups = new SpawnGroup[1];
-		EntitySpawn[] asteroidSpawns = new EntitySpawn[defaultBps.length];
-		for(int i = 0; i < defaultBps.length; i++) asteroidSpawns[i] = new EntitySpawn(defaultBps[i] + " [Derelict]", defaultBps[i], 0.0025f, null);
-		spawnGroups[0] = new SpawnGroup("asteroids", new SpawnCondition[]{new SpawnCondition("sector-type", SectorInformation.SectorType.ASTEROID.name())}, asteroidSpawns);
+		EntitySpawn[] spawns = new EntitySpawn[defaultBps.length];
+		for(int i = 0; i < defaultBps.length; i++) spawns[i] = new EntitySpawn(defaultBps[i] + " [Derelict]", defaultBps[i], 0.002f, null);
+		spawnGroups[0] = new SpawnGroup("spawns", new SpawnCondition[] {}, spawns);
 		config.setSpawnGroups(spawnGroups);
 		try {
 			File file = new File("C:/Users/garre/OneDrive - Arizona State University/Documents/GitHub/LorefulLoot/src/main/resources/config/generation/shipwrecks.json");
-			if(file.exists()) file.delete();
-			file.createNewFile();
+			if(!file.exists()) file.createNewFile();
 			FileUtils.writeStringToFile(file, new Gson().toJson(config));
 		} catch(Exception exception) {
 			exception.printStackTrace();
@@ -74,13 +74,13 @@ public class GenerationManager {
 		ItemStack[] itemStacks = new ItemStack[amount];
 		for(int i = 0; i < amount; i++) {
 			short itemId = getRandomItem();
-			int stackSize = new Random().nextInt(50000) + 1;
+			int stackSize = new Random().nextInt(15000) + 1;
 			itemStacks[i] = new ItemStack(itemId, stackSize);
 		}
 		return itemStacks;
 	}
 
-	public static EntityLore generateRandomLore() {
+	public static EntityLore generateRandomLore(Sector sector) {
 		try {
 			InputStream fileInputStream = LorefulLoot.class.getResourceAsStream("/config/lore.json");
 			File output = new File(DataUtils.getWorldDataPath() + "/lore.json");
@@ -99,7 +99,44 @@ public class GenerationManager {
 			String json = FileUtils.readFileToString(file);
 			LoreCategory loreCategory = new Gson().fromJson(json, LoreCategory.class);
 			for(EntityLore entityLore : loreCategory.getValues()) {
-				if((new Random()).nextFloat() < entityLore.getWeight()) return entityLore;
+				if(entityLore.getConditions().length == 0) {
+					if(new Random().nextFloat() < entityLore.getWeight()) return entityLore;
+				} else {
+					for(SpawnCondition spawnCondition : entityLore.getConditions()) {
+						switch(spawnCondition.getName()) {
+							case "sector-type":
+								if(sector.getSectorType().name().equals(spawnCondition.getValue()) && (new Random().nextFloat()) < entityLore.getWeight()) {
+									return entityLore;
+								}
+								break;
+							case "sector-contains":
+								String value = spawnCondition.getValue();
+								String type = value.split(":")[0];
+								String factionID = value.split("\\[")[1].replaceAll("\\[", "").replaceAll("]", "");
+								int factionId = Integer.parseInt(factionID);
+								switch(type) {
+									case "entity":
+										String entityType = value.split(":")[1];
+										switch(entityType) {
+											case "station":
+												for(SimpleTransformableSendableObject<?> station : sector.getEntities()) {
+													if(station instanceof SpaceStation && station.getFactionId() == factionId) return entityLore;
+												}
+											case "ship":
+												for(SimpleTransformableSendableObject<?> ship : sector.getEntities()) {
+													if(ship instanceof Ship && ship.getFactionId() == factionId) return entityLore;
+												}
+											case "asteroid":
+												for(SimpleTransformableSendableObject<?> asteroid : sector.getEntities()) {
+													if(asteroid instanceof FloatingRock && asteroid.getFactionId() == factionId) return entityLore;
+												}
+										}
+										break;
+								}
+								break;
+						}
+					}
+				}
 			}
 		} catch(Exception exception) {
 			exception.printStackTrace();
@@ -108,12 +145,13 @@ public class GenerationManager {
 		return null;
 	}
 
+
 	private static short getRandomItem() {
 		try {
 			Random random = new Random();
 			ElementInformation[] items = ElementKeyMap.getInfoArray();
 			ElementInformation item = items[random.nextInt(items.length)];
-			if(item.isDeprecated() || !item.isShoppable() || !item.isInRecipe()) return getRandomItem();
+			if(item.isDeprecated() || ! item.isShoppable() || ! item.isInRecipe()) return getRandomItem();
 			else return item.getId();
 		} catch(Exception exception) {
 			exception.printStackTrace();
@@ -156,32 +194,35 @@ public class GenerationManager {
 	}
 
 	private static File getGenerationFolder() {
-		File generationFolder = new File(DataUtils.getWorldDataPath(), "generation");
+		File generationFolder = new File(DataUtils.getWorldDataPath(), "config/generation");
 		if(! generationFolder.exists()) generationFolder.mkdirs();
 		return generationFolder;
 	}
 
 	public static void generateForSector(Sector sector, boolean force) {
 		try {
-			switch(sector.getSectorType()) {
-				case ASTEROID:
-					for(GenerationConfig config : configMap.values()) {
-						for(SpawnGroup spawnGroup : config.getSpawnGroups()) {
-							for(SpawnCondition spawnCondition : spawnGroup.getConditions()) {
-								switch(spawnCondition.getName()) {
-									case "sector-type":
-										if(sector.getSectorType().name().equals(spawnCondition.getValue())) {
-											for(EntitySpawn entitySpawn : spawnGroup.getSpawns()) {
-												Random random = new Random();
-												if(random.nextFloat() <= entitySpawn.getWeight() || force) createEntity(entitySpawn, sector);
-											}
+			for(GenerationConfig config : configMap.values()) {
+				for(SpawnGroup spawnGroup : config.getSpawnGroups()) {
+					if(spawnGroup.getConditions().length == 0) {
+						for(EntitySpawn entitySpawn : spawnGroup.getSpawns()) {
+							Random random = new Random();
+							if(random.nextFloat() <= entitySpawn.getWeight() || force) createEntity(entitySpawn, sector);
+						}
+					} else {
+						for(SpawnCondition spawnCondition : spawnGroup.getConditions()) {
+							switch(spawnCondition.getName()) {
+								case "sector-type":
+									if(sector.getSectorType().name().equals(spawnCondition.getValue())) {
+										for(EntitySpawn entitySpawn : spawnGroup.getSpawns()) {
+											Random random = new Random();
+											if(random.nextFloat() <= entitySpawn.getWeight() || force) createEntity(entitySpawn, sector);
 										}
-										break;
-								}
+									}
+									break;
 							}
 						}
 					}
-					break;
+				}
 			}
 		} catch(Exception exception) {
 			exception.printStackTrace();

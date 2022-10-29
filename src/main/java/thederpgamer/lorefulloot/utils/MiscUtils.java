@@ -1,5 +1,6 @@
 package thederpgamer.lorefulloot.utils;
 
+import api.common.GameServer;
 import api.utils.StarRunnable;
 import com.bulletphysics.linearmath.Transform;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
@@ -19,13 +20,11 @@ import org.schema.game.common.controller.elements.ModuleExplosion;
 import org.schema.game.common.controller.rails.RailRelation;
 import org.schema.game.common.data.ManagedSegmentController;
 import org.schema.game.common.data.SegmentPiece;
-import org.schema.game.common.data.element.ElementKeyMap;
 import org.schema.game.common.data.element.meta.Logbook;
 import org.schema.game.common.data.element.meta.MetaObjectManager;
 import org.schema.game.common.data.player.AbstractOwnerState;
 import org.schema.game.common.data.player.inventory.Inventory;
-import org.schema.game.common.data.player.inventory.InventorySlot;
-import org.schema.game.common.data.player.inventory.StashInventory;
+import org.schema.game.common.data.world.Sector;
 import org.schema.game.common.data.world.Segment;
 import org.schema.game.common.data.world.SimpleTransformableSendableObject;
 import org.schema.schine.network.StateInterface;
@@ -115,7 +114,8 @@ public class MiscUtils {
 					exception.printStackTrace();
 				}
 			} else {
-				EntityLore entityLore = GenerationManager.generateRandomLore();
+				Sector sector = GameServer.getServerState().getUniverse().getSector(entity.getSectorId());
+				EntityLore entityLore = GenerationManager.generateRandomLore(sector);
 				if(entityLore != null) {
 					Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) - 1, true);
 					String fullText = entityLore.getHeader() + "\n" + entityLore.getContent();
