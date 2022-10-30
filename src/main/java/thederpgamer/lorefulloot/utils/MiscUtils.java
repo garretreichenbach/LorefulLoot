@@ -1,21 +1,38 @@
 package thederpgamer.lorefulloot.utils;
 
+import api.common.GameServer;
+import api.utils.StarRunnable;
 import com.bulletphysics.linearmath.Transform;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.schema.common.util.StringTools;
+import org.schema.common.util.linAlg.Vector3b;
 import org.schema.common.util.linAlg.Vector3i;
-import org.schema.game.common.controller.EditableSendableSegmentController;
+import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
+import org.schema.game.common.controller.Ship;
 import org.schema.game.common.controller.damage.DamageDealerType;
 import org.schema.game.common.controller.damage.Damager;
-import org.schema.game.common.controller.damage.HitType;
 import org.schema.game.common.controller.damage.effects.InterEffectHandler;
 import org.schema.game.common.controller.damage.effects.InterEffectSet;
 import org.schema.game.common.controller.damage.effects.MetaWeaponEffectInterface;
+import org.schema.game.common.controller.elements.ModuleExplosion;
+import org.schema.game.common.controller.rails.RailRelation;
+import org.schema.game.common.data.ManagedSegmentController;
 import org.schema.game.common.data.SegmentPiece;
-import org.schema.game.common.data.explosion.AfterExplosionCallback;
-import org.schema.game.common.data.explosion.ExplosionData;
+import org.schema.game.common.data.element.meta.Logbook;
+import org.schema.game.common.data.element.meta.MetaObjectManager;
 import org.schema.game.common.data.player.AbstractOwnerState;
+import org.schema.game.common.data.player.inventory.Inventory;
+import org.schema.game.common.data.world.Sector;
+import org.schema.game.common.data.world.Segment;
 import org.schema.game.common.data.world.SimpleTransformableSendableObject;
 import org.schema.schine.network.StateInterface;
+import thederpgamer.lorefulloot.LorefulLoot;
+import thederpgamer.lorefulloot.data.ItemStack;
+import thederpgamer.lorefulloot.data.generation.EntityLore;
+import thederpgamer.lorefulloot.data.generation.EntitySpawn;
+import thederpgamer.lorefulloot.manager.GenerationManager;
 
 import javax.vecmath.Vector3f;
 import java.util.Random;
@@ -30,36 +47,136 @@ public class MiscUtils {
 	/**
 	 * Wrecks an entity based off a damage intensity.
 	 * @param entity Entity to wreck.
-	 * @param intensity Damage intensity.
 	 * <p>Note: Make sure you save a copy of your ship before using this function!</p>
 	 */
-	public static void wreckShip(SegmentController entity, float intensity) {
-		intensity = Math.max(1, Math.min(10, intensity));
-		Vector3f min = entity.getMinPos().toVector3f();
-		Vector3f max = entity.getMaxPos().toVector3f();
+	public static void wreckShip(final SegmentController entity, final EntitySpawn entitySpawn) {
+		(new Thread() {
+			@Override
+			public void run() {
+				try {
+					while(!entity.isFullyLoadedWithDock()) {
+						Thread.sleep(100);
+					}
+				} catch(Exception exception) {
+					exception.printStackTrace();
+				}
+
+				for(int j = 0; j < 5; j ++) {
+					((Ship) entity).getManagerContainer().getShieldAddOn().setShields(0);
+					((Ship) entity).getManagerContainer().getShieldAddOn().setShieldCapacityHP(0);
+					((Ship) entity).getManagerContainer().getShieldAddOn().setRegenEnabled(false);
+
+					Vector3f min = entity.getMinPos().toVector3f();
+					Vector3f max = entity.getMaxPos().toVector3f();
+					Vector3f size = new Vector3f();
+					size.sub(max, min);
+					int explosionCap = 15;
+					float radius = 10;
+					if(entity.getName().contains("Small")) radius = 3;
+					else if(entity.getName().contains("Medium")) radius = 5;
+					LongArrayList l = new LongArrayList(explosionCap);
+					for(int i = 0; i < explosionCap; i++) l.add(getRandomIndex(entity, 0));
+					ModuleExplosion expl = new ModuleExplosion(l,
+							10,
+							(int) radius,
+							50000000,
+							getRandomIndex(entity, 0),
+							ModuleExplosion.ExplosionCause.INTEGRITY,
+							entity.getBoundingBox());
+					expl.setChain(true);
+					((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
+				}
+			}
+		}).start();
+
+		new StarRunnable() {
+			@Override
+			public void run() {
+				genItems(entity, entitySpawn);
+			}
+		}.runLater(LorefulLoot.getInstance(), 30);
+	}
+
+	private static void genItems(SegmentController entity, EntitySpawn entitySpawn) {
+		if(entitySpawn != null) {
+			ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) entity).getInventories().inventoriesList;
+			if(entitySpawn.getEntityLore() != null) {
+				Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) - 1, true);
+				String fullText = entitySpawn.getEntityLore().getHeader() + "\n" + entitySpawn.getEntityLore().getContent();
+				fullText = StringTools.wrap(fullText, 80);
+				logbook.setTxt(fullText);
+				Inventory inventory = inventories.get((new Random()).nextInt(inventories.size()));
+				try {
+					inventory.put(inventory.getFreeSlot(), logbook);
+					inventory.sendAll();
+				} catch(Exception exception) {
+					LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to add items to entity " + entitySpawn.getName() + " in sector " + entity.getSector(new Vector3i()) + "!", exception);
+					exception.printStackTrace();
+				}
+			} else {
+				Sector sector = GameServer.getServerState().getUniverse().getSector(entity.getSectorId());
+				EntityLore entityLore = GenerationManager.generateRandomLore(sector);
+				if(entityLore != null) {
+					Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) - 1, true);
+					String fullText = entityLore.getHeader() + "\n" + entityLore.getContent();
+					fullText = StringTools.wrap(fullText, 80);
+					logbook.setTxt(fullText);
+					Inventory inventory = inventories.get((new Random()).nextInt(inventories.size()));
+					try {
+						inventory.put(inventory.getFreeSlot(), logbook);
+						inventory.sendAll();
+					} catch(Exception exception) {
+						exception.printStackTrace();
+					}
+				}
+			}
+
+			for(Inventory inventory : inventories) {
+				try {
+					if(entitySpawn.getItems() == null) {
+						ItemStack[] itemStacks = GenerationManager.generateRandomItemStacks(5, 30);
+						for(ItemStack item : itemStacks) item.addTo(inventory);
+					} else for(ItemStack item : entitySpawn.getItems()) item.addTo(inventory);
+					inventory.sendAll();
+				} catch(Exception exception) {
+					LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to add items to entity " + entitySpawn.getName() + " in sector " + entity.getSector(new Vector3i()) + "!", exception);
+					exception.printStackTrace();
+				}
+			}
+			LorefulLoot.log.log(java.util.logging.Level.INFO, "Spawned entity " + entitySpawn.getName() + " in sector " + entity.getSector(new Vector3i()) + "!");
+		}
+		for(RailRelation relation : entity.railController.next) {
+			if(relation.rail != null) {
+				if(relation.rail.getSegmentController() != entity) genItems(relation.rail.getSegmentController(), entitySpawn);
+			}
+		}
+	}
+
+	private static long getRandomIndex(SegmentController entity, int attempts) {
+		Vector3f min = new Vector3f(entity.getMinPos().x, entity.getMinPos().y, entity.getMinPos().z);
+		Vector3f max = new Vector3f(entity.getMaxPos().x, entity.getMaxPos().y, entity.getMaxPos().z);
 		Vector3f size = new Vector3f();
 		size.sub(max, min);
-		int explosionCap = (int) ((entity.getTotalPhysicalMass() / size.length()) * intensity);
-		int explosions = 0;
-		float radius = (size.length() / 4) * (new Random().nextFloat() + intensity);
-		while(explosions < explosionCap) {
-			((EditableSendableSegmentController) entity).addExplosion(
-					new WreckDamager(entity),
-					DamageDealerType.EXPLOSIVE,
-					HitType.ENVIROMENTAL,
-					Long.MIN_VALUE,
-					getRandomHullPoint(entity, 0),
-					radius,
-					5000000,
-					true,
-					new AfterExplosionCallback() {
-						@Override
-						public void onExplosionDone() {
-
-						}
-					}, ExplosionData.INNER | ExplosionData.IGNORESHIELDS_GLOBAL);
-			explosions ++;
+		Vector3f randomPos = new Vector3f();
+		randomPos.x = min.x + (float) Math.random() * size.x;
+		randomPos.y = min.y + (float) Math.random() * size.y;
+		randomPos.z = min.z + (float) Math.random() * size.z;
+		Segment segment = entity.getSegmentBuffer().get(new Vector3i(randomPos));
+		if(attempts < 30) {
+			if(segment == null) return getRandomIndex(entity, attempts + 1);
+			else {
+				Vector3b segmentMin = segment.getSegmentData().getMin();
+				Vector3b segmentMax = segment.getSegmentData().getMax();
+				Vector3b segmentSize = new Vector3b(segmentMax);
+				segmentSize.sub(segmentMin);
+				Vector3b randomSegmentPos = new Vector3b();
+				randomSegmentPos.x = (byte) (segmentMin.x + (int) (Math.random() * segmentSize.x));
+				randomSegmentPos.y = (byte) (segmentMin.y + (int) (Math.random() * segmentSize.y));
+				randomSegmentPos.z = (byte) (segmentMin.z + (int) (Math.random() * segmentSize.z));
+				return segment.getAbsoluteIndex(randomSegmentPos.x, randomSegmentPos.y, randomSegmentPos.z);
+			}
 		}
+		return 0;
 	}
 
 	private static Transform getRandomHullPoint(SegmentController entity, int attempts) {
@@ -67,24 +184,16 @@ public class MiscUtils {
 		Vector3f min = entity.getBoundingBox().min;
 		Vector3f max = entity.getBoundingBox().max;
 		Vector3f size = new Vector3f();
-		size.sub(min, max);
-		Vector3f center = new Vector3f();
-		center.add(min, max);
-		Vector3f randomPos = randomizeOffset(center, (int) size.length());
-		transform.origin.set(randomPos);
+		size.sub(max, min);
+		Vector3f randomPos = new Vector3f();
+		randomPos.x = min.x + (float) Math.random() * size.x;
+		randomPos.y = min.y + (float) Math.random() * size.y;
+		randomPos.z = min.z + (float) Math.random() * size.z;
 		SegmentPiece segmentPiece = entity.getSegmentBuffer().getPointUnsave(new Vector3i(randomPos));
 		if(attempts < 30) {
-			if(segmentPiece == null || segmentPiece.getType() == 0 || !segmentPiece.getInfo().getName().contains("Armor")) return getRandomHullPoint(entity, attempts + 1);
+			if(segmentPiece == null || segmentPiece.getType() == 0) return getRandomHullPoint(entity, attempts + 1);
 		}
 		return transform;
-	}
-
-	private static Vector3f randomizeOffset(Vector3f offset, int range) {
-		Random random = new Random();
-		offset.x += random.nextInt(range) - range / 2;
-		offset.y += random.nextInt(range) - range / 2;
-		offset.z += random.nextInt(range) - range / 2;
-		return offset;
 	}
 
 	private static class WreckDamager implements Damager {
@@ -95,7 +204,9 @@ public class MiscUtils {
 
 		public WreckDamager(SegmentController entity) {
 			this.entity = entity;
-			this.damageSet.setStrength(InterEffectHandler.InterEffectType.HEAT, 1000.0f);
+			this.damageSet.setStrength(InterEffectHandler.InterEffectType.EM, 0.5f);
+			this.damageSet.setStrength(InterEffectHandler.InterEffectType.HEAT, 0.5f);
+			this.damageSet.setStrength(InterEffectHandler.InterEffectType.KIN, 0.5f);
 		}
 
 		@Override
@@ -130,7 +241,7 @@ public class MiscUtils {
 
 		@Override
 		public AbstractOwnerState getOwnerState() {
-			return null;
+			return entity.getOwnerState();
 		}
 
 		@Override

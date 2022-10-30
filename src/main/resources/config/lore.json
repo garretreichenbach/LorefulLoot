@@ -1,5 +1,6 @@
 {
-    "shipwrecks": [
+    "name": "shipwrecks",
+    "values": [
         {
             "name": "Survey Woes",
             "header": "Captain's Log [10.5.3122]:",
@@ -21,7 +22,7 @@
             "header": "Captain's Log [10.25.3122]:",
             "content": "We have detected a strange signal coming from the planet below. It appears to be some sort of distress call, but it's not coming from any known language. We have sent a team down to investigate, but they have not returned yet...",
             "type": "LOG",
-            "weight": 0.15,
+            "weight": 0.65,
             "conditions": [
                 {
                     "name": "sector-type",
@@ -34,10 +35,10 @@
             "header": "Captain's Log [11.15.3117]:",
             "content": "Captain’s Log [11.15.3117]: \nIf there was one thing I’ve despised most about our journeys, it has to be the constant harassment from raiders. I knew this region of the galaxy was filled with criminal scum, but I assumed the Guild would provide us escorts.\n\nThe only reason we are still alive is due to my head diplomat, who is incredibly gifted at her job. Even so, we have still had to hand over credits occasionally to some of the more persistent pirates.\n\nThe problem is that these bandits are only interested in profit and some excitement. I would hate to believe that someone actually views these sorts of ruffians as potential business partners. Yet I have heard rumors of corruption and even some collaboration in parts of the Guild’s upper command…",
             "type": "LOG",
-            "weight": 0.27,
+            "weight": 0.6,
             "conditions": [
                 {
-                    "name": "adjacent-sector-contains",
+                    "name": "sector-contains",
                     "value": "entity:station[-2]"
                 }
             ]
@@ -50,35 +51,18 @@
             "weight": 0.27,
             "conditions": [
                 {
-                    "name": "sector-contains",
-                    "value": "entity:asteroid_base_wrecked[0]"
+                    "name": "sector-type",
+                    "value": "ASTEROID"
                 }
             ]
         },
         {
             "name": "Frustrating Response",
             "header": "Communication Log [3.12.3119]:",
-            "content": "[ECG-Falchion] Fleet command, we have repeatedly asked for a fresh supply of coils for the repair work. We cannot complete the work without it, and if you expect us to finish the work before we run out we can't be responsible for the damage it might cause.\n\n[Fleet Command] Captain Jan we understand your concerns, however we cannot spare the material resources right now.\n\n[ECG-Falchion] Bullshit! I know where you’ve been funneling the coils, and it’s illegal according to the Galactic Concordat! Give me my damn coils or don’t be surprised if someone leaks this corruption to the press!\n\n[Fleet Command] Hello, this is Service Bot 0319C, I will attempt to answer any questions you might have.\n\n[ECG-Falchion] Don’t give me the service bot treatment! I want to speak to an actual person dammit!",
+            "content": "[ECG-Falchion] Fleet command, we have repeatedly asked for a fresh supply of coils for the repair work. We cannot complete the work without it, and if you expect us to finish the work before we run out we can't be responsible for the damage it might cause.\n\n[Fleet Command] Captain Jan we understand your concerns, however we cannot spare the material resources right now.",
             "type": "COMMUNICATION",
             "weight": 0.2,
             "conditions": []
-        },
-        {
-            "name": "Sacrifices",
-            "header": "Communication Log [5.5.3121]:",
-            "content": "[ECG-Murklow] Unidentified vessel, please turn on your transponder to continue docking.\n\n[ECG-Murklow] Unidentified vessel, you must lower your speed to avoid a crash. Turn on your transponder and respond or you will be fired upon.\n\n[ECG-Pentas?] This is Captain uh… Bill? Requesting to dock.\n\n[ECG-Murklow] Negative Pentas, stop your engines and prepare to be inspected. Your transponder corresponds to Captain Bill Morden, who is long deceased.\n\n[ECG-Pentas?] … For the revolution.\n\n-TRANSMISSION CUT-",
-            "type": "COMMUNICATION",
-            "weight": 0.65,
-            "conditions": [
-                {
-                    "name": "sector-contains",
-                    "value": "entity:station_wrecked[0]"
-                },
-                {
-                    "name": "sector-contains",
-                    "value": "entity:ship_wrecked[0]"
-                }
-            ]
         }
     ]
 }

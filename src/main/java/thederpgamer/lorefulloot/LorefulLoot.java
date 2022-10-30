@@ -1,9 +1,11 @@
 package thederpgamer.lorefulloot;
 
+import api.listener.events.controller.ClientInitializeEvent;
 import api.mod.StarLoader;
 import api.mod.StarMod;
 import thederpgamer.lorefulloot.data.commands.CreateWreckCommand;
 import thederpgamer.lorefulloot.data.commands.ForceGenerateCommand;
+import thederpgamer.lorefulloot.data.commands.RemoveDeprecatedCommand;
 import thederpgamer.lorefulloot.manager.ConfigManager;
 import thederpgamer.lorefulloot.manager.EventManager;
 import thederpgamer.lorefulloot.manager.GenerationManager;
@@ -39,6 +41,12 @@ public class LorefulLoot extends StarMod {
 		EventManager.initialize(this);
 		GenerationManager.initialize();
 		registerCommands();
+	}
+
+	@Override
+	public void onClientCreated(ClientInitializeEvent event) {
+		super.onClientCreated(event);
+		GenerationManager.genDefaults();
 	}
 
 	private void initLogger() {
@@ -80,5 +88,6 @@ public class LorefulLoot extends StarMod {
 	private void registerCommands() {
 		StarLoader.registerCommand(new CreateWreckCommand());
 		StarLoader.registerCommand(new ForceGenerateCommand());
+		StarLoader.registerCommand(new RemoveDeprecatedCommand());
 	}
 }
