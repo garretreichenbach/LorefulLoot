@@ -84,7 +84,6 @@ public class EntitySanitizerExecutor {
 				try {
 					SegmentPiece piece = entity.getSegmentBuffer().getPointUnsave(index);
 					piece.setType((short) 0);
-					piece.reset();
 					piece.applyToSegment(entity.isOnServer());
 				} catch(Exception ignored) {}
 			}

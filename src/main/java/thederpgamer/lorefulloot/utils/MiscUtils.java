@@ -81,7 +81,7 @@ public class MiscUtils {
 							(int) radius,
 							50000000,
 							getRandomIndex(entity, 0),
-							ModuleExplosion.ExplosionCause.INTEGRITY,
+							ModuleExplosion.ExplosionCause.STABILITY,
 							entity.getBoundingBox());
 					expl.setChain(true);
 					((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);

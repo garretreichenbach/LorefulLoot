@@ -46,7 +46,7 @@ public class LorefulLoot extends StarMod {
 	@Override
 	public void onClientCreated(ClientInitializeEvent event) {
 		super.onClientCreated(event);
-		GenerationManager.genDefaults();
+		//GenerationManager.genDefaults();
 	}
 
 	private void initLogger() {
@@ -58,11 +58,27 @@ public class LorefulLoot extends StarMod {
 				File[] logFiles = new File[logsFolder.listFiles().length];
 				int j = logFiles.length - 1;
 				for(int i = 0; i < logFiles.length && j >= 0; i++) {
-					logFiles[i] = logsFolder.listFiles()[j];
+					if(!logsFolder.listFiles()[i].getName().endsWith(".lck")) logFiles[j] = logsFolder.listFiles()[i];
 					j--;
 				}
 
-				for(File logFile : logFiles) {
+				//Trim null entries
+				int nullCount = 0;
+				for(File value : logFiles) {
+					if(value == null) nullCount ++;
+				}
+
+				File[] trimmedLogFiles = new File[logFiles.length - nullCount];
+				int l = 0;
+				for(File file : logFiles) {
+					if(file != null) {
+						trimmedLogFiles[l] = file;
+						l++;
+					}
+				}
+
+				for(File logFile : trimmedLogFiles) {
+					if(logFile == null) continue;
 					String fileName = logFile.getName().replace(".txt", "");
 					int logNumber = Integer.parseInt(fileName.substring(fileName.indexOf("log") + 3)) + 1;
 					String newName = logFolderPath + "/log" + logNumber + ".txt";
