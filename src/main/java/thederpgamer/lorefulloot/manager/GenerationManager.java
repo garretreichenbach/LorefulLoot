@@ -54,7 +54,7 @@ public class GenerationManager {
 		config.setName("shipwrecks");
 		SpawnGroup[] spawnGroups = new SpawnGroup[1];
 		EntitySpawn[] spawns = new EntitySpawn[defaultBps.length];
-		for(int i = 0; i < defaultBps.length; i++) spawns[i] = new EntitySpawn(defaultBps[i] + " [Derelict]", defaultBps[i], 0.015f, null);
+		for(int i = 0; i < defaultBps.length; i++) spawns[i] = new EntitySpawn(defaultBps[i] + " [Derelict]", defaultBps[i], 0.005f, null);
 		spawnGroups[0] = new SpawnGroup("spawns", new SpawnCondition[] {}, spawns);
 		config.setSpawnGroups(spawnGroups);
 		try {
