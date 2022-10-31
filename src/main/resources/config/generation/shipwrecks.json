@@ -1,1 +1,88 @@
-{"name":"shipwrecks","spawnGroups":[{"name":"spawns","conditions":[],"spawns":[{"name":"Small-Shipwreck-01 [Derelict]","bpName":"Small-Shipwreck-01","weight":0.015,"factionId":0},{"name":"Small-Shipwreck-02 [Derelict]","bpName":"Small-Shipwreck-02","weight":0.015,"factionId":0},{"name":"Small-Shipwreck-03 [Derelict]","bpName":"Small-Shipwreck-03","weight":0.015,"factionId":0},{"name":"Small-Shipwreck-04 [Derelict]","bpName":"Small-Shipwreck-04","weight":0.015,"factionId":0},{"name":"Small-Shipwreck-05 [Derelict]","bpName":"Small-Shipwreck-05","weight":0.015,"factionId":0},{"name":"Medium-Shipwreck-01 [Derelict]","bpName":"Medium-Shipwreck-01","weight":0.015,"factionId":0},{"name":"Medium-Shipwreck-02 [Derelict]","bpName":"Medium-Shipwreck-02","weight":0.015,"factionId":0},{"name":"Medium-Shipwreck-03 [Derelict]","bpName":"Medium-Shipwreck-03","weight":0.015,"factionId":0},{"name":"Medium-Shipwreck-04 [Derelict]","bpName":"Medium-Shipwreck-04","weight":0.015,"factionId":0},{"name":"Medium-Shipwreck-05 [Derelict]","bpName":"Medium-Shipwreck-05","weight":0.015,"factionId":0},{"name":"Large-Shipwreck-01 [Derelict]","bpName":"Large-Shipwreck-01","weight":0.015,"factionId":0}]}]}
+{
+  "name": "shipwrecks",
+  "spawnGroups": [
+    {
+      "name": "spawns",
+      "conditions": [],
+      "spawns": [
+        {
+          "name": "Small-Shipwreck-01 [Derelict]",
+          "bpName": "Small-Shipwreck-01",
+          "weight": 0.005,
+          "factionId": 0,
+          "itemStacks": []
+        },
+        {
+          "name": "Small-Shipwreck-02 [Derelict]",
+          "bpName": "Small-Shipwreck-02",
+          "weight": 0.005,
+          "factionId": 0,
+          "itemStacks": []
+        },
+        {
+          "name": "Small-Shipwreck-03 [Derelict]",
+          "bpName": "Small-Shipwreck-03",
+          "weight": 0.005,
+          "factionId": 0,
+          "itemStacks": []
+        },
+        {
+          "name": "Small-Shipwreck-04 [Derelict]",
+          "bpName": "Small-Shipwreck-04",
+          "weight": 0.005,
+          "factionId": 0,
+          "itemStacks": []
+        },
+        {
+          "name": "Small-Shipwreck-05 [Derelict]",
+          "bpName": "Small-Shipwreck-05",
+          "weight": 0.005,
+          "factionId": 0,
+          "itemStacks": []
+        },
+        {
+          "name": "Medium-Shipwreck-01 [Derelict]",
+          "bpName": "Medium-Shipwreck-01",
+          "weight": 0.0035,
+          "factionId": 0,
+          "itemStacks": []
+        },
+        {
+          "name": "Medium-Shipwreck-02 [Derelict]",
+          "bpName": "Medium-Shipwreck-02",
+          "weight": 0.0035,
+          "factionId": 0,
+          "itemStacks": []
+        },
+        {
+          "name": "Medium-Shipwreck-03 [Derelict]",
+          "bpName": "Medium-Shipwreck-03",
+          "weight": 0.0035,
+          "factionId": 0,
+          "itemStacks": []
+        },
+        {
+          "name": "Medium-Shipwreck-04 [Derelict]",
+          "bpName": "Medium-Shipwreck-04",
+          "weight": 0.0035,
+          "factionId": 0,
+          "itemStacks": []
+        },
+        {
+          "name": "Medium-Shipwreck-05 [Derelict]",
+          "bpName": "Medium-Shipwreck-05",
+          "weight": 0.0035,
+          "factionId": 0,
+          "itemStacks": []
+        },
+        {
+          "name": "Large-Shipwreck-01 [Derelict]",
+          "bpName": "Large-Shipwreck-01",
+          "weight": 0.0015,
+          "factionId": 0,
+          "itemStacks": []
+        }
+      ]
+    }
+  ]
+}
