@@ -5,6 +5,7 @@ import api.mod.StarLoader;
 import api.mod.StarMod;
 import thederpgamer.lorefulloot.data.commands.CreateWreckCommand;
 import thederpgamer.lorefulloot.data.commands.ForceGenerateCommand;
+import thederpgamer.lorefulloot.data.commands.HollowShipCommand;
 import thederpgamer.lorefulloot.data.commands.RemoveDeprecatedCommand;
 import thederpgamer.lorefulloot.manager.ConfigManager;
 import thederpgamer.lorefulloot.manager.EventManager;
@@ -105,5 +106,6 @@ public class LorefulLoot extends StarMod {
 		StarLoader.registerCommand(new CreateWreckCommand());
 		StarLoader.registerCommand(new ForceGenerateCommand());
 		StarLoader.registerCommand(new RemoveDeprecatedCommand());
+		StarLoader.registerCommand(new HollowShipCommand());
 	}
 }

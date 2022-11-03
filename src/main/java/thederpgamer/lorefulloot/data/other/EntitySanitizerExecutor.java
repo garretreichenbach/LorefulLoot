@@ -23,7 +23,7 @@ import java.util.concurrent.*;
 public class EntitySanitizerExecutor {
 
 	private final static LongArrayList toRemove = new LongArrayList();
-	private static final int MAX_THREADS = 32;
+	private static final int MAX_THREADS = 64;
 
 	public static void compute(Segment segment) {
 		SegmentController entity = segment.getSegmentController();
