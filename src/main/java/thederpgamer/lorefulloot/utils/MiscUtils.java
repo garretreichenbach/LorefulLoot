@@ -81,7 +81,7 @@ public class MiscUtils {
 							(int) radius,
 							50000000,
 							getRandomIndex(entity, 0),
-							ModuleExplosion.ExplosionCause.INTEGRITY,
+							ModuleExplosion.ExplosionCause.STABILITY,
 							entity.getBoundingBox());
 					expl.setChain(true);
 					((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
@@ -133,7 +133,7 @@ public class MiscUtils {
 
 			for(Inventory inventory : inventories) {
 				try {
-					if(entitySpawn.getItems() == null) {
+					if(entitySpawn.getItems() == null || entitySpawn.getItems().length == 0) {
 						ItemStack[] itemStacks = GenerationManager.generateRandomItemStacks(5, 30);
 						for(ItemStack item : itemStacks) item.addTo(inventory);
 					} else for(ItemStack item : entitySpawn.getItems()) item.addTo(inventory);

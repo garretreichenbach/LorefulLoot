@@ -43,7 +43,7 @@ import java.util.logging.Level;
 public class GenerationManager {
 	public static final HashMap<String, GenerationConfig> configMap = new HashMap<>();
 	private static final String[] defaultBps = {
-			"Small-Shipwreck-01", "Small-Shipwreck-02", "Small-Shipwreck-03", "Small-Shipwreck-04", "Medium-Shipwreck-01", "Medium-Shipwreck-02"
+			"Small-Shipwreck-01", "Small-Shipwreck-02", "Small-Shipwreck-03", "Small-Shipwreck-04", "Small-Shipwreck-05", "Medium-Shipwreck-01", "Medium-Shipwreck-02", "Medium-Shipwreck-03", "Medium-Shipwreck-04", "Medium-Shipwreck-05", "Large-Shipwreck-01"
 	};
 	private static final String[] defaultConfigs = {
 			"/config/generation/shipwrecks.json"
@@ -54,7 +54,7 @@ public class GenerationManager {
 		config.setName("shipwrecks");
 		SpawnGroup[] spawnGroups = new SpawnGroup[1];
 		EntitySpawn[] spawns = new EntitySpawn[defaultBps.length];
-		for(int i = 0; i < defaultBps.length; i++) spawns[i] = new EntitySpawn(defaultBps[i] + " [Derelict]", defaultBps[i], 0.002f, null);
+		for(int i = 0; i < defaultBps.length; i++) spawns[i] = new EntitySpawn(defaultBps[i] + " [Derelict]", defaultBps[i], 0.005f, new ItemStack[0]);
 		spawnGroups[0] = new SpawnGroup("spawns", new SpawnCondition[] {}, spawns);
 		config.setSpawnGroups(spawnGroups);
 		try {
@@ -74,7 +74,7 @@ public class GenerationManager {
 		ItemStack[] itemStacks = new ItemStack[amount];
 		for(int i = 0; i < amount; i++) {
 			short itemId = getRandomItem();
-			int stackSize = new Random().nextInt(15000) + 1;
+			int stackSize = new Random().nextInt(10000) + 1;
 			itemStacks[i] = new ItemStack(itemId, stackSize);
 		}
 		return itemStacks;
