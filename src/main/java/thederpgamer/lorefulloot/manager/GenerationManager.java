@@ -22,6 +22,7 @@ import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirec
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.data.ItemStack;
 import thederpgamer.lorefulloot.data.generation.*;
+import thederpgamer.lorefulloot.data.other.EntityHollowExecutor;
 import thederpgamer.lorefulloot.data.other.EntitySanitizerExecutor;
 import thederpgamer.lorefulloot.utils.DataUtils;
 import thederpgamer.lorefulloot.utils.MiscUtils;
@@ -277,6 +278,11 @@ public class GenerationManager {
 	public static void sanitizeEntity(final SegmentController entity, PlayerState player) throws ExecutionException, InterruptedException {
 		EntitySanitizerExecutor.compute(entity, player);
 		for(RailRelation relation : entity.railController.next) sanitizeEntity(relation.docked.getSegmentController(), player);
+	}
+
+	public static void hollowEntity(SegmentController entity, PlayerState player) throws ExecutionException, InterruptedException {
+		EntityHollowExecutor.compute(entity, player);
+		for(RailRelation relation : entity.railController.next) hollowEntity(relation.docked.getSegmentController(), player);
 	}
 
 	private static Transform getRandomTransformInSector() {
