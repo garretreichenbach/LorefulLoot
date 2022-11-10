@@ -59,9 +59,11 @@ public class LorefulLoot extends StarMod {
 				File[] logFiles = new File[logsFolder.listFiles().length];
 				int j = logFiles.length - 1;
 				for(int i = 0; i < logFiles.length && j >= 0; i++) {
-					if(!logsFolder.listFiles()[i].getName().endsWith(".lck")) logFiles[j] = logsFolder.listFiles()[i];
-					else logsFolder.listFiles()[i].delete();
-					j--;
+					try {
+						if(!logFiles[i].getName().endsWith(".lck")) logFiles[j] = logFiles[i];
+						else logFiles[i].delete();
+						j--;
+					} catch(Exception ignored) { }
 				}
 
 				//Trim null entries
