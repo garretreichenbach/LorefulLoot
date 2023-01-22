@@ -54,37 +54,30 @@ public class MiscUtils {
 			@Override
 			public void run() {
 				try {
-					while(!entity.isFullyLoadedWithDock()) {
-						Thread.sleep(100);
-					}
+					while(!entity.isFullyLoadedWithDock()) Thread.sleep(100);
 				} catch(Exception exception) {
 					exception.printStackTrace();
 				}
 
-				for(int j = 0; j < 5; j ++) {
-					((Ship) entity).getManagerContainer().getShieldAddOn().setShields(0);
-					((Ship) entity).getManagerContainer().getShieldAddOn().setShieldCapacityHP(0);
-					((Ship) entity).getManagerContainer().getShieldAddOn().setRegenEnabled(false);
-
-					Vector3f min = entity.getMinPos().toVector3f();
-					Vector3f max = entity.getMaxPos().toVector3f();
-					Vector3f size = new Vector3f();
-					size.sub(max, min);
-					int explosionCap = 15;
-					float radius = 10;
-					if(entity.getName().contains("Small")) radius = 3;
-					else if(entity.getName().contains("Medium")) radius = 5;
-					LongArrayList l = new LongArrayList(explosionCap);
-					for(int i = 0; i < explosionCap; i++) l.add(getRandomIndex(entity, 0));
-					ModuleExplosion expl = new ModuleExplosion(l,
-							10,
-							(int) radius,
-							50000000,
-							getRandomIndex(entity, 0),
-							ModuleExplosion.ExplosionCause.STABILITY,
-							entity.getBoundingBox());
-					expl.setChain(true);
-					((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
+				try {
+					for(int j = 0; j < 5; j++) {
+						((Ship) entity).getManagerContainer().getShieldAddOn().setShields(0);
+						((Ship) entity).getManagerContainer().getShieldAddOn().setShieldCapacityHP(0);
+						((Ship) entity).getManagerContainer().getShieldAddOn().setRegenEnabled(false);
+						int explosionCap = 10;
+						float radius = 10;
+						if(entity.getName().contains("Small")) radius = 3;
+						else if(entity.getName().contains("Medium")) radius = 5;
+						LongArrayList l = new LongArrayList(explosionCap);
+						for(int i = 0; i < explosionCap; i++) l.add(getRandomIndex(entity, 0));
+						ModuleExplosion expl = new ModuleExplosion(l, 5, (int) radius, 50000000, getRandomIndex(entity, 0), ModuleExplosion.ExplosionCause.STABILITY, entity.getBoundingBox());
+						expl.setChain(true);
+						((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
+					}
+				} catch(Exception exception) {
+					exception.printStackTrace();
+					entity.setMarkedForDeletePermanentIncludingDocks(true);
+					entity.setMarkedForDeleteVolatileIncludingDocks(true);
 				}
 			}
 		}).start();
@@ -92,9 +85,24 @@ public class MiscUtils {
 		new StarRunnable() {
 			@Override
 			public void run() {
-				genItems(entity, entitySpawn);
+				try {
+					Ship ship = (Ship) entity;
+					if(!ship.getSegmentBuffer().existsPointUnsave(new Vector3i(0, 0, 0)) || !ship.checkCore(ship.getSegmentBuffer().getPointUnsave(new Vector3i(0, 0, 0)))) {
+						ship.setMarkedForDeletePermanentIncludingDocks(true);
+						ship.setMarkedForDeleteVolatileIncludingDocks(true);
+						LorefulLoot.log.warning("Ship " + ship.getName() + " has been deleted due to core destruction.");
+						return;
+					}
+					entity.stopCoreOverheating();
+					genItems(entity, entitySpawn);
+				} catch(Exception exception) {
+					exception.printStackTrace();
+					entity.setMarkedForDeletePermanentIncludingDocks(true);
+					entity.setMarkedForDeleteVolatileIncludingDocks(true);
+					LorefulLoot.log.warning("Ship " + entity.getName() + " has been deleted due to exception.");
+				}
 			}
-		}.runLater(LorefulLoot.getInstance(), 30);
+		}.runLater(LorefulLoot.getInstance(), 60);
 	}
 
 	private static void genItems(SegmentController entity, EntitySpawn entitySpawn) {

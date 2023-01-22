@@ -1,5 +1,6 @@
 package thederpgamer.lorefulloot.manager;
 
+import api.listener.events.entity.SegmentControllerOverheatEvent;
 import com.bulletphysics.linearmath.Transform;
 import com.google.gson.Gson;
 import org.apache.commons.io.FileUtils;
@@ -7,7 +8,6 @@ import org.schema.game.common.controller.FloatingRock;
 import org.schema.game.common.controller.SegmentController;
 import org.schema.game.common.controller.Ship;
 import org.schema.game.common.controller.SpaceStation;
-import org.schema.game.common.controller.rails.RailRelation;
 import org.schema.game.common.data.element.ElementInformation;
 import org.schema.game.common.data.element.ElementKeyMap;
 import org.schema.game.common.data.player.PlayerState;
@@ -22,8 +22,6 @@ import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirec
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.data.ItemStack;
 import thederpgamer.lorefulloot.data.generation.*;
-import thederpgamer.lorefulloot.data.other.EntityHollowExecutor;
-import thederpgamer.lorefulloot.data.other.EntitySanitizerExecutor;
 import thederpgamer.lorefulloot.utils.DataUtils;
 import thederpgamer.lorefulloot.utils.MiscUtils;
 
@@ -33,7 +31,6 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 
 /**
@@ -43,6 +40,9 @@ import java.util.logging.Level;
  */
 public class GenerationManager {
 	public static final HashMap<String, GenerationConfig> configMap = new HashMap<>();
+	public static final HashMap<SegmentController, Long> overheatMap = new HashMap<>();
+	public static Thread overheatThread;
+
 	private static final String[] defaultBps = {
 			"Small-Shipwreck-01", "Small-Shipwreck-02", "Small-Shipwreck-03", "Small-Shipwreck-04", "Small-Shipwreck-05", "Medium-Shipwreck-01", "Medium-Shipwreck-02", "Medium-Shipwreck-03", "Medium-Shipwreck-04", "Medium-Shipwreck-05", "Large-Shipwreck-01"
 	};
@@ -115,24 +115,22 @@ public class GenerationManager {
 								String type = value.split(":")[0];
 								String factionID = value.split("\\[")[1].replaceAll("\\[", "").replaceAll("]", "");
 								int factionId = Integer.parseInt(factionID);
-								switch(type) {
-									case "entity":
-										String entityType = value.split(":")[1];
-										switch(entityType) {
-											case "station":
-												for(SimpleTransformableSendableObject<?> station : sector.getEntities()) {
-													if(station instanceof SpaceStation && station.getFactionId() == factionId) return entityLore;
-												}
-											case "ship":
-												for(SimpleTransformableSendableObject<?> ship : sector.getEntities()) {
-													if(ship instanceof Ship && ship.getFactionId() == factionId) return entityLore;
-												}
-											case "asteroid":
-												for(SimpleTransformableSendableObject<?> asteroid : sector.getEntities()) {
-													if(asteroid instanceof FloatingRock && asteroid.getFactionId() == factionId) return entityLore;
-												}
-										}
-										break;
+								if("entity".equals(type)) {
+									String entityType = value.split(":")[1];
+									switch(entityType) {
+										case "station":
+											for(SimpleTransformableSendableObject<?> station : sector.getEntities()) {
+												if(station instanceof SpaceStation && station.getFactionId() == factionId) return entityLore;
+											}
+										case "ship":
+											for(SimpleTransformableSendableObject<?> ship : sector.getEntities()) {
+												if(ship instanceof Ship && ship.getFactionId() == factionId) return entityLore;
+											}
+										case "asteroid":
+											for(SimpleTransformableSendableObject<?> asteroid : sector.getEntities()) {
+												if(asteroid instanceof FloatingRock && asteroid.getFactionId() == factionId) return entityLore;
+											}
+									}
 								}
 								break;
 						}
@@ -231,7 +229,7 @@ public class GenerationManager {
 		}
 	}
 
-	private static void createEntity(final EntitySpawn entitySpawn, final Sector sector) {
+	private static void createEntity(EntitySpawn entitySpawn, Sector sector) {
 		SegmentControllerOutline<?> scOutline = null;
 		try {
 			scOutline = BluePrintController.active.loadBluePrint(
@@ -275,16 +273,6 @@ public class GenerationManager {
 		}
 	}
 
-	public static void sanitizeEntity(final SegmentController entity, PlayerState player) throws ExecutionException, InterruptedException {
-		EntitySanitizerExecutor.compute(entity, player);
-		for(RailRelation relation : entity.railController.next) sanitizeEntity(relation.docked.getSegmentController(), player);
-	}
-
-	public static void hollowEntity(SegmentController entity, PlayerState player) throws ExecutionException, InterruptedException {
-		EntityHollowExecutor.compute(entity, player);
-		for(RailRelation relation : entity.railController.next) hollowEntity(relation.docked.getSegmentController(), player);
-	}
-
 	private static Transform getRandomTransformInSector() {
 		//Gen Random Position
 		int sectorSize = (Integer) ServerConfig.SECTOR_SIZE.getCurrentState();
@@ -307,5 +295,53 @@ public class GenerationManager {
 		transform.basis.rotY(yaw);
 		transform.basis.rotZ(roll);
 		return transform; //Hope and pray it doesn't collide with anything
+	}
+
+	public static void createShipWreckFromCombat(SegmentControllerOverheatEvent event) {
+		SegmentController entity = event.getEntity();
+		if(!overheatMap.containsKey(entity)) {
+			if(entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()) > 15000) overheatMap.put(entity, entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()));
+			else {
+				entity.setFactionId(0);
+				entity.setMinable(true);
+				entity.setRealName(entity.getRealName() + " [Wreckage]");
+				entity.setMarkedForDeletePermanentIncludingDocks(false);
+				entity.setMarkedForDeleteVolatileIncludingDocks(false);
+				entity.stopCoreOverheating();
+				overheatMap.remove(entity);
+			}
+			if(overheatThread == null || !overheatThread.isAlive()) {
+				overheatThread = new Thread() {
+					@Override
+					public void run() {
+						while(true) {
+							try {
+								Thread.sleep(5000);
+							} catch(InterruptedException exception) {
+								exception.printStackTrace();
+							}
+							for(int i = 0; i < overheatMap.size(); i ++) { //Prevent concurrent modification errors
+								SegmentController entity = (SegmentController) overheatMap.keySet().toArray()[i];
+								try {
+									if(entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()) <= 15000) {
+										entity.setFactionId(0);
+										entity.setMinable(true);
+										entity.setRealName(entity.getRealName() + " [Wreckage]");
+										entity.setMarkedForDeletePermanentIncludingDocks(false);
+										entity.setMarkedForDeleteVolatileIncludingDocks(false);
+										entity.stopCoreOverheating();
+									}
+								} catch(Exception exception) {
+									exception.printStackTrace();
+								} finally {
+									overheatMap.remove(entity);
+								}
+							}
+						}
+					}
+				};
+				overheatThread.start();
+			}
+		}
 	}
 }
