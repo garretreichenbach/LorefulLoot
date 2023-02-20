@@ -89,13 +89,6 @@ public class MiscUtils {
 			@Override
 			public void run() {
 				try {
-					Ship ship = (Ship) entity;
-					if(!ship.getSegmentBuffer().existsPointUnsave(new Vector3i(0, 0, 0)) || !ship.checkCore(ship.getSegmentBuffer().getPointUnsave(new Vector3i(0, 0, 0)))) {
-						ship.setMarkedForDeletePermanentIncludingDocks(true);
-						ship.setMarkedForDeleteVolatileIncludingDocks(true);
-						LorefulLoot.log.warning("Ship " + ship.getName() + " has been deleted due to core destruction.");
-						return;
-					}
 					entity.stopCoreOverheating();
 					genItems(entity, entitySpawn);
 				} catch(Exception exception) {
@@ -106,6 +99,20 @@ public class MiscUtils {
 				}
 			}
 		}.runLater(LorefulLoot.getInstance(), 60);
+
+		/*
+		new StarRunnable() {
+			@Override
+			public void run() {
+				Ship ship = (Ship) entity;
+				if(!ship.getSegmentBuffer().existsPointUnsave(new Vector3i(0, 0, 0)) || !ship.checkCore(ship.getSegmentBuffer().getPointUnsave(new Vector3i(0, 0, 0)))) {
+					ship.setMarkedForDeletePermanentIncludingDocks(true);
+					ship.setMarkedForDeleteVolatileIncludingDocks(true);
+					LorefulLoot.log.warning("Ship " + ship.getName() + " has been deleted due to core destruction.");
+				}
+			}
+		}.runLater(LorefulLoot.getInstance(), 120);
+		 */
 	}
 
 	private static void genItems(SegmentController entity, EntitySpawn entitySpawn) {
