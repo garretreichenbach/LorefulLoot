@@ -70,7 +70,10 @@ public class MiscUtils {
 						else if(entity.getName().contains("Medium")) radius = 5;
 						LongArrayList l = new LongArrayList(explosionCap);
 						for(int i = 0; i < explosionCap; i++) l.add(getRandomIndex(entity, 0));
-						ModuleExplosion expl = new ModuleExplosion(l, 5, (int) radius, 50000000, getRandomIndex(entity, 0), ModuleExplosion.ExplosionCause.STABILITY, entity.getBoundingBox());
+						long index = getRandomIndex(entity, 0);
+						Segment segment = entity.getSegmentBuffer().getPointUnsave(index).getSegment();
+						if(segment.pos.length() == 0 && !entity.getName().contains("Small")) continue; //Dont explode in the core
+						ModuleExplosion expl = new ModuleExplosion(l, 5, (int) radius, 50000000, index, ModuleExplosion.ExplosionCause.STABILITY, entity.getBoundingBox());
 						expl.setChain(true);
 						((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
 					}
