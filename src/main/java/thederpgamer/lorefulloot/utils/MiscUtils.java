@@ -43,11 +43,11 @@ import java.util.Random;
  * @author TheDerpGamer (MrGoose#0027)
  */
 public class MiscUtils {
-
 	/**
 	 * Wrecks an entity based off a damage intensity.
+	 *
 	 * @param entity Entity to wreck.
-	 * <p>Note: Make sure you save a copy of your ship before using this function!</p>
+	 *               <p>Note: Make sure you save a copy of your ship before using this function!</p>
 	 */
 	public static void wreckShip(final SegmentController entity, final EntitySpawn entitySpawn) {
 		(new Thread() {
@@ -58,7 +58,6 @@ public class MiscUtils {
 				} catch(Exception exception) {
 					exception.printStackTrace();
 				}
-
 				try {
 					for(int j = 0; j < 5; j++) {
 						((Ship) entity).getManagerContainer().getShieldAddOn().setShields(0);
@@ -84,7 +83,6 @@ public class MiscUtils {
 				}
 			}
 		}).start();
-
 		new StarRunnable() {
 			@Override
 			public void run() {
@@ -119,7 +117,7 @@ public class MiscUtils {
 		if(entitySpawn != null) {
 			ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) entity).getInventories().inventoriesList;
 			if(entitySpawn.getEntityLore() != null) {
-				Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) - 1, true);
+				Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) -1, true);
 				String fullText = entitySpawn.getEntityLore().getHeader() + "\n" + entitySpawn.getEntityLore().getContent();
 				fullText = StringTools.wrap(fullText, 80);
 				logbook.setTxt(fullText);
@@ -135,7 +133,7 @@ public class MiscUtils {
 				Sector sector = GameServer.getServerState().getUniverse().getSector(entity.getSectorId());
 				EntityLore entityLore = GenerationManager.generateRandomLore(sector);
 				if(entityLore != null) {
-					Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) - 1, true);
+					Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) -1, true);
 					String fullText = entityLore.getHeader() + "\n" + entityLore.getContent();
 					fullText = StringTools.wrap(fullText, 80);
 					logbook.setTxt(fullText);
@@ -148,7 +146,6 @@ public class MiscUtils {
 					}
 				}
 			}
-
 			for(Inventory inventory : inventories) {
 				try {
 					if(entitySpawn.getItems() == null || entitySpawn.getItems().length == 0) {
@@ -215,10 +212,8 @@ public class MiscUtils {
 	}
 
 	private static class WreckDamager implements Damager {
-
 		private final SegmentController entity;
 		private final InterEffectSet damageSet = new InterEffectSet();
-
 
 		public WreckDamager(SegmentController entity) {
 			this.entity = entity;
@@ -234,7 +229,6 @@ public class MiscUtils {
 
 		@Override
 		public void sendHitConfirm(byte b) {
-
 		}
 
 		@Override
@@ -264,7 +258,6 @@ public class MiscUtils {
 
 		@Override
 		public void sendClientMessage(String s, int i) {
-
 		}
 
 		@Override
@@ -289,7 +282,6 @@ public class MiscUtils {
 
 		@Override
 		public void sendServerMessage(Object[] objects, int i) {
-
 		}
 	}
 }

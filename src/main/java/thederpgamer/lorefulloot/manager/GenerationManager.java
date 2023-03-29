@@ -4,10 +4,7 @@ import api.listener.events.entity.SegmentControllerOverheatEvent;
 import com.bulletphysics.linearmath.Transform;
 import com.google.gson.Gson;
 import org.apache.commons.io.FileUtils;
-import org.schema.game.common.controller.FloatingRock;
-import org.schema.game.common.controller.SegmentController;
-import org.schema.game.common.controller.Ship;
-import org.schema.game.common.controller.SpaceStation;
+import org.schema.game.common.controller.*;
 import org.schema.game.common.data.element.ElementInformation;
 import org.schema.game.common.data.element.ElementKeyMap;
 import org.schema.game.common.data.player.PlayerState;
@@ -302,45 +299,19 @@ public class GenerationManager {
 		if(!overheatMap.containsKey(entity)) {
 			if(entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()) > 15000) overheatMap.put(entity, entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()));
 			else {
-				entity.setFactionId(0);
-				entity.setMinable(true);
-				entity.setRealName(entity.getRealName() + " [Wreckage]");
-				entity.setMarkedForDeletePermanentIncludingDocks(false);
-				entity.setMarkedForDeleteVolatileIncludingDocks(false);
-				entity.stopCoreOverheating();
-				overheatMap.remove(entity);
-			}
-			if(overheatThread == null || !overheatThread.isAlive()) {
-				overheatThread = new Thread() {
-					@Override
-					public void run() {
-						while(true) {
-							try {
-								Thread.sleep(5000);
-							} catch(InterruptedException exception) {
-								exception.printStackTrace();
-							}
-							for(int i = 0; i < overheatMap.size(); i ++) { //Prevent concurrent modification errors
-								SegmentController entity = (SegmentController) overheatMap.keySet().toArray()[i];
-								try {
-									if(entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()) <= 15000) {
-										entity.setFactionId(0);
-										entity.setMinable(true);
-										entity.setRealName(entity.getRealName() + " [Wreckage]");
-										entity.setMarkedForDeletePermanentIncludingDocks(false);
-										entity.setMarkedForDeleteVolatileIncludingDocks(false);
-										entity.stopCoreOverheating();
-									}
-								} catch(Exception exception) {
-									exception.printStackTrace();
-								} finally {
-									overheatMap.remove(entity);
-								}
-							}
-						}
+				if(!entity.getRealName().contains("[Wreckage]")) {
+					entity.setRealName(entity.getRealName() + " [Wreckage]");
+					entity.setFactionId(0);
+					entity.setMinable(true);
+					entity.setMarkedForDeletePermanentIncludingDocks(false);
+					entity.setMarkedForDeleteVolatileIncludingDocks(false);
+					entity.stopCoreOverheating();
+					if(entity instanceof ManagedUsableSegmentController<?>) {
+						ManagedUsableSegmentController<?> managedUsableSegmentController = (ManagedUsableSegmentController<?>) entity;
+						managedUsableSegmentController.getManagerContainer().getPowerInterface().requestRecalibrate();
 					}
-				};
-				overheatThread.start();
+				}
+				overheatMap.remove(entity);
 			}
 		}
 	}
