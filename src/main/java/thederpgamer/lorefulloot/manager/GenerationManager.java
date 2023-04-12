@@ -119,14 +119,17 @@ public class GenerationManager {
 											for(SimpleTransformableSendableObject<?> station : sector.getEntities()) {
 												if(station instanceof SpaceStation && station.getFactionId() == factionId) return entityLore;
 											}
+											break;
 										case "ship":
 											for(SimpleTransformableSendableObject<?> ship : sector.getEntities()) {
 												if(ship instanceof Ship && ship.getFactionId() == factionId) return entityLore;
 											}
+											break;
 										case "asteroid":
 											for(SimpleTransformableSendableObject<?> asteroid : sector.getEntities()) {
 												if(asteroid instanceof FloatingRock && asteroid.getFactionId() == factionId) return entityLore;
 											}
+											break;
 									}
 								}
 								break;
@@ -147,7 +150,7 @@ public class GenerationManager {
 			Random random = new Random();
 			ElementInformation[] items = ElementKeyMap.getInfoArray();
 			ElementInformation item = items[random.nextInt(items.length)];
-			if(item.isDeprecated() || ! item.isShoppable() || ! item.isInRecipe()) return getRandomItem();
+			if(item.isDeprecated() || !item.isShoppable() || !item.isInRecipe() || item.getId() == 1) return getRandomItem();
 			else return item.getId();
 		} catch(Exception exception) {
 			exception.printStackTrace();
