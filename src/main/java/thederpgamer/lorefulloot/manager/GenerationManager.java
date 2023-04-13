@@ -72,7 +72,7 @@ public class GenerationManager {
 		ItemStack[] itemStacks = new ItemStack[amount];
 		for(int i = 0; i < amount; i++) {
 			short itemId = getRandomItem();
-			int stackSize = new Random().nextInt(10000) + 1;
+			int stackSize = new Random().nextInt(5000) + 1;
 			itemStacks[i] = new ItemStack(itemId, stackSize);
 		}
 		return itemStacks;
@@ -268,6 +268,7 @@ public class GenerationManager {
 		}
 
 		if(segmentController != null) {
+			segmentController.setMinable(true);
 			segmentController.getSegmentBuffer().restructBB();
 			MiscUtils.wreckShip(segmentController, entitySpawn);
 		}

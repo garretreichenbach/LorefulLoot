@@ -3,6 +3,7 @@ package thederpgamer.lorefulloot;
 import api.listener.events.controller.ClientInitializeEvent;
 import api.mod.StarLoader;
 import api.mod.StarMod;
+import org.apache.commons.io.IOUtils;
 import thederpgamer.lorefulloot.data.commands.CreateWreckCommand;
 import thederpgamer.lorefulloot.data.commands.ForceGenerateCommand;
 import thederpgamer.lorefulloot.manager.ConfigManager;
@@ -12,9 +13,13 @@ import thederpgamer.lorefulloot.utils.DataUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Objects;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class LorefulLoot extends StarMod {
 
@@ -31,6 +36,9 @@ public class LorefulLoot extends StarMod {
 
 	//Data
 	public static Logger log;
+	private final String[] overwriteClasses = {
+		"Ship" //Todo: Remove this next release
+	};
 
 	@Override
 	public void onEnable() {
@@ -45,7 +53,13 @@ public class LorefulLoot extends StarMod {
 	@Override
 	public void onClientCreated(ClientInitializeEvent event) {
 		super.onClientCreated(event);
-		//GenerationManager.genDefaults();
+//		GenerationManager.genDefaults();
+	}
+
+	@Override
+	public byte[] onClassTransform(String className, byte[] byteCode) {
+		for(String name : overwriteClasses) if(className.endsWith(name)) return overwriteClass(className, byteCode);
+		return super.onClassTransform(className, byteCode);
 	}
 
 	private void initLogger() {
@@ -53,8 +67,8 @@ public class LorefulLoot extends StarMod {
 		File logsFolder = new File(logFolderPath);
 		if(!logsFolder.exists()) logsFolder.mkdirs();
 		else {
-			if(logsFolder.listFiles() != null && logsFolder.listFiles().length > 0) {
-				File[] logFiles = new File[logsFolder.listFiles().length];
+			if(logsFolder.listFiles() != null && Objects.requireNonNull(logsFolder.listFiles()).length > 0) {
+				File[] logFiles = new File[Objects.requireNonNull(logsFolder.listFiles()).length];
 				int j = logFiles.length - 1;
 				for(int i = 0; i < logFiles.length && j >= 0; i++) {
 					try {
@@ -106,5 +120,22 @@ public class LorefulLoot extends StarMod {
 	private void registerCommands() {
 		StarLoader.registerCommand(new CreateWreckCommand());
 		StarLoader.registerCommand(new ForceGenerateCommand());
+	}
+
+	private byte[] overwriteClass(String className, byte[] byteCode) {
+		byte[] bytes = null;
+		try {
+			ZipInputStream file = new ZipInputStream(Files.newInputStream(getSkeleton().getJarFile().toPath()));
+			while(true) {
+				ZipEntry nextEntry = file.getNextEntry();
+				if(nextEntry == null) break;
+				if(nextEntry.getName().endsWith(className + ".class")) bytes = IOUtils.toByteArray(file);
+			}
+			file.close();
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+		if(bytes != null) return bytes;
+		else return byteCode;
 	}
 }

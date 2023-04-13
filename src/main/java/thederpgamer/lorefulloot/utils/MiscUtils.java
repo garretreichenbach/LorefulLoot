@@ -149,7 +149,7 @@ public class MiscUtils {
 			for(Inventory inventory : inventories) {
 				try {
 					if(entitySpawn.getItems() == null || entitySpawn.getItems().length == 0) {
-						ItemStack[] itemStacks = GenerationManager.generateRandomItemStacks(5, 30);
+						ItemStack[] itemStacks = GenerationManager.generateRandomItemStacks(5, 15);
 						for(ItemStack item : itemStacks) item.addTo(inventory);
 					} else for(ItemStack item : entitySpawn.getItems()) item.addTo(inventory);
 					inventory.sendAll();

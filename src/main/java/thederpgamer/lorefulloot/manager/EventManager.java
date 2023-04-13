@@ -1,6 +1,7 @@
 package thederpgamer.lorefulloot.manager;
 
 import api.listener.Listener;
+import api.listener.events.entity.SegmentControllerFullyLoadedEvent;
 import api.listener.events.entity.SegmentControllerOverheatEvent;
 import api.listener.events.world.AsteroidPreSpawnEvent;
 import api.listener.events.world.PlanetCreateEvent;
@@ -39,6 +40,13 @@ public class EventManager {
 						LorefulLoot.log.warning("Failed to generate shipwreck from combat:\n" + exception.getMessage());
 					}
 				}
+			}
+		}, instance);
+
+		StarLoader.registerListener(SegmentControllerFullyLoadedEvent.class, new Listener<SegmentControllerFullyLoadedEvent>() {
+			@Override
+			public void onEvent(SegmentControllerFullyLoadedEvent event) {
+				if(event.getController().getName().contains("Shipwreck")) event.getController().setMinable(true);
 			}
 		}, instance);
 
