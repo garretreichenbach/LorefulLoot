@@ -7,6 +7,7 @@ import api.listener.events.world.AsteroidPreSpawnEvent;
 import api.listener.events.world.PlanetCreateEvent;
 import api.mod.StarLoader;
 import thederpgamer.lorefulloot.LorefulLoot;
+import thederpgamer.lorefulloot.utils.MiscUtils;
 
 /**
  * [Description]
@@ -46,7 +47,10 @@ public class EventManager {
 		StarLoader.registerListener(SegmentControllerFullyLoadedEvent.class, new Listener<SegmentControllerFullyLoadedEvent>() {
 			@Override
 			public void onEvent(SegmentControllerFullyLoadedEvent event) {
-				if(event.getController().getName().contains("Shipwreck")) event.getController().setMinable(true);
+				if(event.getController().getName().contains("Shipwreck") && !event.getController().isMinable()) {
+					event.getController().setMinable(true);
+					MiscUtils.putItems(event.getController());
+				}
 			}
 		}, instance);
 

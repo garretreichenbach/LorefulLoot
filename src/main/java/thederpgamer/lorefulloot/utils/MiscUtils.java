@@ -113,7 +113,7 @@ public class MiscUtils {
 		 */
 	}
 
-	private static void genItems(SegmentController entity, EntitySpawn entitySpawn) {
+	public static void genItems(SegmentController entity, EntitySpawn entitySpawn) {
 		if(entitySpawn != null) {
 			ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) entity).getInventories().inventoriesList;
 			if(entitySpawn.getEntityLore() != null) {
@@ -163,6 +163,20 @@ public class MiscUtils {
 		for(RailRelation relation : entity.railController.next) {
 			if(relation.rail != null) {
 				if(relation.rail.getSegmentController() != entity) genItems(relation.rail.getSegmentController(), entitySpawn);
+			}
+		}
+	}
+
+	public static void putItems(SegmentController entity) {
+		ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) entity).getInventories().inventoriesList;
+		for(Inventory inventory : inventories) {
+			try {
+				inventory.clear();
+				ItemStack[] itemStacks = GenerationManager.generateRandomItemStacks(5, 15);
+				for(ItemStack item : itemStacks) item.addTo(inventory);
+				inventory.sendAll();
+			} catch(Exception exception) {
+				exception.printStackTrace();
 			}
 		}
 	}
