@@ -43,65 +43,81 @@ import java.util.Random;
  * @author TheDerpGamer (MrGoose#0027)
  */
 public class MiscUtils {
-
 	/**
 	 * Wrecks an entity based off a damage intensity.
+	 *
 	 * @param entity Entity to wreck.
-	 * <p>Note: Make sure you save a copy of your ship before using this function!</p>
+	 *               <p>Note: Make sure you save a copy of your ship before using this function!</p>
 	 */
 	public static void wreckShip(final SegmentController entity, final EntitySpawn entitySpawn) {
 		(new Thread() {
 			@Override
 			public void run() {
 				try {
-					while(!entity.isFullyLoadedWithDock()) {
-						Thread.sleep(100);
-					}
+					while(!entity.isFullyLoadedWithDock()) Thread.sleep(100);
 				} catch(Exception exception) {
 					exception.printStackTrace();
 				}
-
-				for(int j = 0; j < 5; j ++) {
-					((Ship) entity).getManagerContainer().getShieldAddOn().setShields(0);
-					((Ship) entity).getManagerContainer().getShieldAddOn().setShieldCapacityHP(0);
-					((Ship) entity).getManagerContainer().getShieldAddOn().setRegenEnabled(false);
-
-					Vector3f min = entity.getMinPos().toVector3f();
-					Vector3f max = entity.getMaxPos().toVector3f();
-					Vector3f size = new Vector3f();
-					size.sub(max, min);
-					int explosionCap = 15;
-					float radius = 10;
-					if(entity.getName().contains("Small")) radius = 3;
-					else if(entity.getName().contains("Medium")) radius = 5;
-					LongArrayList l = new LongArrayList(explosionCap);
-					for(int i = 0; i < explosionCap; i++) l.add(getRandomIndex(entity, 0));
-					ModuleExplosion expl = new ModuleExplosion(l,
-							10,
-							(int) radius,
-							50000000,
-							getRandomIndex(entity, 0),
-							ModuleExplosion.ExplosionCause.STABILITY,
-							entity.getBoundingBox());
-					expl.setChain(true);
-					((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
+				try {
+					for(int j = 0; j < 5; j++) {
+						((Ship) entity).getManagerContainer().getShieldAddOn().setShields(0);
+						((Ship) entity).getManagerContainer().getShieldAddOn().setShieldCapacityHP(0);
+						((Ship) entity).getManagerContainer().getShieldAddOn().setRegenEnabled(false);
+						int explosionCap = 10;
+						float radius = 10;
+						if(entity.getName().contains("Small")) radius = 3;
+						else if(entity.getName().contains("Medium")) radius = 5;
+						LongArrayList l = new LongArrayList(explosionCap);
+						for(int i = 0; i < explosionCap; i++) l.add(getRandomIndex(entity, 0));
+						long index = getRandomIndex(entity, 0);
+						Segment segment = entity.getSegmentBuffer().getPointUnsave(index).getSegment();
+						if(segment.pos.length() == 0 && !entity.getName().contains("Small")) continue; //Dont explode in the core
+						ModuleExplosion expl = new ModuleExplosion(l, 5, (int) radius, 50000000, index, ModuleExplosion.ExplosionCause.STABILITY, entity.getBoundingBox());
+						expl.setChain(true);
+						((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
+					}
+				} catch(Exception exception) {
+					exception.printStackTrace();
+					entity.setMarkedForDeletePermanentIncludingDocks(true);
+					entity.setMarkedForDeleteVolatileIncludingDocks(true);
 				}
 			}
 		}).start();
-
 		new StarRunnable() {
 			@Override
 			public void run() {
-				genItems(entity, entitySpawn);
+				try {
+					entity.stopCoreOverheating();
+					genItems(entity, entitySpawn);
+				} catch(Exception exception) {
+					exception.printStackTrace();
+					entity.setMarkedForDeletePermanentIncludingDocks(true);
+					entity.setMarkedForDeleteVolatileIncludingDocks(true);
+					LorefulLoot.log.warning("Ship " + entity.getName() + " has been deleted due to exception.");
+				}
 			}
-		}.runLater(LorefulLoot.getInstance(), 30);
+		}.runLater(LorefulLoot.getInstance(), 60);
+
+		/*
+		new StarRunnable() {
+			@Override
+			public void run() {
+				Ship ship = (Ship) entity;
+				if(!ship.getSegmentBuffer().existsPointUnsave(new Vector3i(0, 0, 0)) || !ship.checkCore(ship.getSegmentBuffer().getPointUnsave(new Vector3i(0, 0, 0)))) {
+					ship.setMarkedForDeletePermanentIncludingDocks(true);
+					ship.setMarkedForDeleteVolatileIncludingDocks(true);
+					LorefulLoot.log.warning("Ship " + ship.getName() + " has been deleted due to core destruction.");
+				}
+			}
+		}.runLater(LorefulLoot.getInstance(), 120);
+		 */
 	}
 
-	private static void genItems(SegmentController entity, EntitySpawn entitySpawn) {
+	public static void genItems(SegmentController entity, EntitySpawn entitySpawn) {
 		if(entitySpawn != null) {
 			ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) entity).getInventories().inventoriesList;
 			if(entitySpawn.getEntityLore() != null) {
-				Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) - 1, true);
+				Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) -1, true);
 				String fullText = entitySpawn.getEntityLore().getHeader() + "\n" + entitySpawn.getEntityLore().getContent();
 				fullText = StringTools.wrap(fullText, 80);
 				logbook.setTxt(fullText);
@@ -117,7 +133,7 @@ public class MiscUtils {
 				Sector sector = GameServer.getServerState().getUniverse().getSector(entity.getSectorId());
 				EntityLore entityLore = GenerationManager.generateRandomLore(sector);
 				if(entityLore != null) {
-					Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) - 1, true);
+					Logbook logbook = (Logbook) MetaObjectManager.instantiate(MetaObjectManager.MetaObjectType.LOG_BOOK, (short) -1, true);
 					String fullText = entityLore.getHeader() + "\n" + entityLore.getContent();
 					fullText = StringTools.wrap(fullText, 80);
 					logbook.setTxt(fullText);
@@ -130,11 +146,10 @@ public class MiscUtils {
 					}
 				}
 			}
-
 			for(Inventory inventory : inventories) {
 				try {
 					if(entitySpawn.getItems() == null || entitySpawn.getItems().length == 0) {
-						ItemStack[] itemStacks = GenerationManager.generateRandomItemStacks(5, 30);
+						ItemStack[] itemStacks = GenerationManager.generateRandomItemStacks(5, 15);
 						for(ItemStack item : itemStacks) item.addTo(inventory);
 					} else for(ItemStack item : entitySpawn.getItems()) item.addTo(inventory);
 					inventory.sendAll();
@@ -148,6 +163,20 @@ public class MiscUtils {
 		for(RailRelation relation : entity.railController.next) {
 			if(relation.rail != null) {
 				if(relation.rail.getSegmentController() != entity) genItems(relation.rail.getSegmentController(), entitySpawn);
+			}
+		}
+	}
+
+	public static void putItems(SegmentController entity) {
+		ObjectArrayList<Inventory> inventories = ((ManagedUsableSegmentController<?>) entity).getInventories().inventoriesList;
+		for(Inventory inventory : inventories) {
+			try {
+				inventory.clear();
+				ItemStack[] itemStacks = GenerationManager.generateRandomItemStacks(5, 15);
+				for(ItemStack item : itemStacks) item.addTo(inventory);
+				inventory.sendAll();
+			} catch(Exception exception) {
+				exception.printStackTrace();
 			}
 		}
 	}
@@ -197,10 +226,8 @@ public class MiscUtils {
 	}
 
 	private static class WreckDamager implements Damager {
-
 		private final SegmentController entity;
 		private final InterEffectSet damageSet = new InterEffectSet();
-
 
 		public WreckDamager(SegmentController entity) {
 			this.entity = entity;
@@ -216,7 +243,6 @@ public class MiscUtils {
 
 		@Override
 		public void sendHitConfirm(byte b) {
-
 		}
 
 		@Override
@@ -246,7 +272,6 @@ public class MiscUtils {
 
 		@Override
 		public void sendClientMessage(String s, int i) {
-
 		}
 
 		@Override
@@ -271,7 +296,6 @@ public class MiscUtils {
 
 		@Override
 		public void sendServerMessage(Object[] objects, int i) {
-
 		}
 	}
 }

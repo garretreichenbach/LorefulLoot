@@ -6,79 +6,79 @@
       "conditions": [],
       "spawns": [
         {
-          "name": "Small-Shipwreck-01 [Derelict]",
+          "name": "Small-Ship-01 [Wreckage]",
           "bpName": "Small-Shipwreck-01",
-          "weight": 0.005,
+          "weight": 0.0035,
           "factionId": 0,
           "itemStacks": []
         },
         {
-          "name": "Small-Shipwreck-02 [Derelict]",
+          "name": "Small-Ship-02 [Wreckage]",
           "bpName": "Small-Shipwreck-02",
-          "weight": 0.005,
+          "weight": 0.0035,
           "factionId": 0,
           "itemStacks": []
         },
         {
-          "name": "Small-Shipwreck-03 [Derelict]",
+          "name": "Small-Ship-03 [Wreckage]",
           "bpName": "Small-Shipwreck-03",
-          "weight": 0.005,
+          "weight": 0.0035,
           "factionId": 0,
           "itemStacks": []
         },
         {
-          "name": "Small-Shipwreck-04 [Derelict]",
+          "name": "Small-Ship-04 [Wreckage]",
           "bpName": "Small-Shipwreck-04",
-          "weight": 0.005,
+          "weight": 0.0035,
           "factionId": 0,
           "itemStacks": []
         },
         {
-          "name": "Small-Shipwreck-05 [Derelict]",
+          "name": "Small-Ship-05 [Wreckage]",
           "bpName": "Small-Shipwreck-05",
-          "weight": 0.005,
+          "weight": 0.0035,
           "factionId": 0,
           "itemStacks": []
         },
         {
-          "name": "Medium-Shipwreck-01 [Derelict]",
+          "name": "Medium-Ship-01 [Wreckage]",
           "bpName": "Medium-Shipwreck-01",
-          "weight": 0.0035,
+          "weight": 0.001,
           "factionId": 0,
           "itemStacks": []
         },
         {
-          "name": "Medium-Shipwreck-02 [Derelict]",
+          "name": "Medium-Ship-02 [Wreckage]",
           "bpName": "Medium-Shipwreck-02",
-          "weight": 0.0035,
+          "weight": 0.001,
           "factionId": 0,
           "itemStacks": []
         },
         {
-          "name": "Medium-Shipwreck-03 [Derelict]",
+          "name": "Medium-Ship-03 [Wreckage]",
           "bpName": "Medium-Shipwreck-03",
-          "weight": 0.0035,
+          "weight": 0.001,
           "factionId": 0,
           "itemStacks": []
         },
         {
-          "name": "Medium-Shipwreck-04 [Derelict]",
+          "name": "Medium-Ship-04 [Wreckage]",
           "bpName": "Medium-Shipwreck-04",
-          "weight": 0.0035,
+          "weight": 0.001,
           "factionId": 0,
           "itemStacks": []
         },
         {
-          "name": "Medium-Shipwreck-05 [Derelict]",
+          "name": "Medium-Ship-05 [Wreckage]",
           "bpName": "Medium-Shipwreck-05",
-          "weight": 0.0035,
+          "weight": 0.001,
           "factionId": 0,
           "itemStacks": []
         },
         {
-          "name": "Large-Shipwreck-01 [Derelict]",
+          "name": "Large-Ship-01 [Wreckage]",
           "bpName": "Large-Shipwreck-01",
-          "weight": 0.0015,
+          "weight": 0.0005,
           "factionId": 0,
           "itemStacks": []
         }
