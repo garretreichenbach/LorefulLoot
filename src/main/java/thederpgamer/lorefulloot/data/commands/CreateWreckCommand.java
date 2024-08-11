@@ -3,13 +3,12 @@ package thederpgamer.lorefulloot.data.commands;
 import api.mod.StarMod;
 import api.utils.game.PlayerUtils;
 import api.utils.game.chat.CommandInterface;
-import org.schema.game.common.controller.SegmentController;
+import org.schema.game.common.controller.Ship;
 import org.schema.game.common.data.player.PlayerState;
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.utils.MiscUtils;
 
 import javax.annotation.Nullable;
-import java.util.logging.Level;
 
 /**
  * [Description]
@@ -41,14 +40,14 @@ public class CreateWreckCommand implements CommandInterface {
 
 	@Override
 	public boolean onCommand(PlayerState sender, String[] args) {
-		if(!(PlayerUtils.getCurrentControl(sender) instanceof SegmentController)) {
+		if(!(PlayerUtils.getCurrentControl(sender) instanceof Ship)) {
 			PlayerUtils.sendMessage(sender, "You must be controlling a ship to use this command!");
 			return true;
 		}
 		try {
-			MiscUtils.wreckShip((SegmentController) PlayerUtils.getCurrentControl(sender), null);
+			MiscUtils.wreckShip((Ship) PlayerUtils.getCurrentControl(sender));
 		} catch(Exception exception) {
-			LorefulLoot.log.log(Level.WARNING, "Failed to create wreck!", exception);
+			LorefulLoot.getInstance().logException("Failed to create wreck!", exception);
 			PlayerUtils.sendMessage(sender, "Failed to create wreck! Check the server logs for more information.");
 		}
 		return true;
@@ -61,6 +60,6 @@ public class CreateWreckCommand implements CommandInterface {
 
 	@Override
 	public StarMod getMod() {
-		return null;
+		return LorefulLoot.getInstance();
 	}
 }

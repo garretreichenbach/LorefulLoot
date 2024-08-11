@@ -11,7 +11,7 @@ def starmadeDirectory = 'C:/Program Files (x86)/Steam/steamapps/common/StarMade/
 def jarName = 'LorefulLoot'
 mainClassName = 'thederpgamer.lorefulloot.LorefulLoot'
 group 'thederpgamer.lorefulloot'
-version '1.1.3 - Kessler'
+version '2.0.0 - Megalith'
 
 repositories {
     mavenCentral()
@@ -31,9 +31,8 @@ jar {
     manifest.attributes('Main-Class': mainClassName)
     from {
         configurations.runtimeClasspath.collect {
-            if(!it.getPath().contains("StarMade") && it.getName().endsWith(".jar")) {
-                it.isDirectory() ? it : zipTree(it)
-            } else return null;
+            if(!it.getPath().contains("StarMade") && it.getName().endsWith(".jar")) it.isDirectory() ? it : zipTree(it)
+            else return null;
         }
     }
 }
