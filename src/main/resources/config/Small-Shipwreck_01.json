@@ -1,6 +1,7 @@
 {
 	"name": "Small-Shipwreck-01",
 	"weight": 0.035,
+	"size": "SMALL",
 	"item_stacks": [
 		{
 			"id": "5",
