@@ -2,14 +2,13 @@ package thederpgamer.lorefulloot.manager;
 
 import api.listener.events.entity.SegmentControllerOverheatEvent;
 import com.bulletphysics.linearmath.Transform;
-import com.google.gson.Gson;
-import org.apache.commons.io.FileUtils;
-import org.schema.game.common.controller.*;
-import org.schema.game.common.data.element.ElementInformation;
-import org.schema.game.common.data.element.ElementKeyMap;
+import org.apache.commons.io.IOUtils;
+import org.json.JSONObject;
+import org.schema.game.common.controller.ManagedUsableSegmentController;
+import org.schema.game.common.controller.SegmentController;
+import org.schema.game.common.controller.Ship;
 import org.schema.game.common.data.player.PlayerState;
 import org.schema.game.common.data.world.Sector;
-import org.schema.game.common.data.world.SimpleTransformableSendableObject;
 import org.schema.game.server.controller.BluePrintController;
 import org.schema.game.server.data.GameServerState;
 import org.schema.game.server.data.ServerConfig;
@@ -17,260 +16,112 @@ import org.schema.game.server.data.blueprint.ChildStats;
 import org.schema.game.server.data.blueprint.SegmentControllerOutline;
 import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirect;
 import thederpgamer.lorefulloot.LorefulLoot;
-import thederpgamer.lorefulloot.data.ItemStack;
-import thederpgamer.lorefulloot.data.generation.*;
+import thederpgamer.lorefulloot.data.generation.GenerationConfig;
 import thederpgamer.lorefulloot.utils.DataUtils;
 import thederpgamer.lorefulloot.utils.MiscUtils;
 
 import javax.vecmath.Vector3f;
 import java.io.File;
-import java.io.InputStream;
+import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Random;
-import java.util.logging.Level;
 
 /**
- * [Description]
+ * Manager class for handling generation of entities and loot.
  *
- * @author TheDerpGamer (MrGoose#0027)
+ * @author TheDerpGamer
  */
 public class GenerationManager {
+
 	public static final HashMap<String, GenerationConfig> configMap = new HashMap<>();
 	public static final HashMap<SegmentController, Long> overheatMap = new HashMap<>();
-	public static Thread overheatThread;
-
-	private static final String[] defaultBps = {
-			"Small-Shipwreck-01", "Small-Shipwreck-02", "Small-Shipwreck-03", "Small-Shipwreck-04", "Small-Shipwreck-05", "Medium-Shipwreck-01", "Medium-Shipwreck-02", "Medium-Shipwreck-03", "Medium-Shipwreck-04", "Medium-Shipwreck-05", "Large-Shipwreck-01"
-	};
-	private static final String[] defaultConfigs = {
-			"/config/generation/shipwrecks.json"
-	};
-
-	public static void genDefaults() {
-		GenerationConfig config = new GenerationConfig();
-		config.setName("shipwrecks");
-		SpawnGroup[] spawnGroups = new SpawnGroup[1];
-		EntitySpawn[] spawns = new EntitySpawn[defaultBps.length];
-		for(int i = 0; i < defaultBps.length; i++) spawns[i] = new EntitySpawn(defaultBps[i] + " [Derelict]", defaultBps[i], 0.005f, new ItemStack[0]);
-		spawnGroups[0] = new SpawnGroup("spawns", new SpawnCondition[] {}, spawns);
-		config.setSpawnGroups(spawnGroups);
-		try {
-			File file = new File("C:/Users/garre/OneDrive - Arizona State University/Documents/GitHub/LorefulLoot/src/main/resources/config/generation/shipwrecks.json");
-			if(!file.exists()) file.createNewFile();
-			FileUtils.writeStringToFile(file, new Gson().toJson(config));
-		} catch(Exception exception) {
-			exception.printStackTrace();
-			LorefulLoot.log.log(Level.WARNING, "Failed to generate default config file!", exception);
-		}
-		configMap.put(config.getName(), config);
-	}
-
-	public static ItemStack[] generateRandomItemStacks(int min, int max) {
-		Random random = new Random();
-		int amount = random.nextInt(max - min) + min;
-		ItemStack[] itemStacks = new ItemStack[amount];
-		for(int i = 0; i < amount; i++) {
-			short itemId = getRandomItem();
-			int stackSize = new Random().nextInt(5000) + 1;
-			itemStacks[i] = new ItemStack(itemId, stackSize);
-		}
-		return itemStacks;
-	}
-
-	public static EntityLore generateRandomLore(Sector sector) {
-		try {
-			InputStream fileInputStream = LorefulLoot.class.getResourceAsStream("/config/lore.json");
-			File output = new File(DataUtils.getWorldDataPath() + "/lore.json");
-			if(!output.exists()) {
-				output.createNewFile();
-				assert fileInputStream != null;
-				FileUtils.copyInputStreamToFile(fileInputStream, output);
-			}
-		} catch(Exception exception) {
-			exception.printStackTrace();
-			LorefulLoot.log.log(Level.WARNING, "Failed to generate default lore file!", exception);
-		}
-
-		File file = new File(DataUtils.getWorldDataPath() + "/lore.json");
-		try {
-			String json = FileUtils.readFileToString(file);
-			LoreCategory loreCategory = new Gson().fromJson(json, LoreCategory.class);
-			for(EntityLore entityLore : loreCategory.getValues()) {
-				if(entityLore.getConditions().length == 0) {
-					if(new Random().nextFloat() < entityLore.getWeight()) return entityLore;
-				} else {
-					for(SpawnCondition spawnCondition : entityLore.getConditions()) {
-						switch(spawnCondition.getName()) {
-							case "sector-type":
-								if(sector.getSectorType().name().equals(spawnCondition.getValue()) && (new Random().nextFloat()) < entityLore.getWeight()) {
-									return entityLore;
-								}
-								break;
-							case "sector-contains":
-								String value = spawnCondition.getValue();
-								String type = value.split(":")[0];
-								String factionID = value.split("\\[")[1].replaceAll("\\[", "").replaceAll("]", "");
-								int factionId = Integer.parseInt(factionID);
-								if("entity".equals(type)) {
-									String entityType = value.split(":")[1];
-									switch(entityType) {
-										case "station":
-											for(SimpleTransformableSendableObject<?> station : sector.getEntities()) {
-												if(station instanceof SpaceStation && station.getFactionId() == factionId) return entityLore;
-											}
-											break;
-										case "ship":
-											for(SimpleTransformableSendableObject<?> ship : sector.getEntities()) {
-												if(ship instanceof Ship && ship.getFactionId() == factionId) return entityLore;
-											}
-											break;
-										case "asteroid":
-											for(SimpleTransformableSendableObject<?> asteroid : sector.getEntities()) {
-												if(asteroid instanceof FloatingRock && asteroid.getFactionId() == factionId) return entityLore;
-											}
-											break;
-									}
-								}
-								break;
-						}
-					}
-				}
-			}
-		} catch(Exception exception) {
-			exception.printStackTrace();
-			LorefulLoot.log.log(Level.WARNING, "Failed to load lore file!", exception);
-		}
-		return null;
-	}
-
-
-	private static short getRandomItem() {
-		try {
-			Random random = new Random();
-			ElementInformation[] items = ElementKeyMap.getInfoArray();
-			ElementInformation item = items[random.nextInt(items.length)];
-			if(item.isDeprecated() || !item.isShoppable() || !item.isInRecipe() || item.getId() == 1) return getRandomItem();
-			else return item.getId();
-		} catch(Exception exception) {
-			exception.printStackTrace();
-			return 1;
-		}
-	}
 
 	public static void initialize() {
 		File generationFolder = getGenerationFolder();
-		if(generationFolder.listFiles() == null || generationFolder.listFiles().length == 0) {
-			loadDefaultConfigs(generationFolder);
-			return;
+		if(generationFolder.listFiles() == null || Objects.requireNonNull(generationFolder.listFiles()).length == 0) {
+			LorefulLoot.getInstance().logException("No generation configs found! You must add configs to the moddata/config folder", new Exception("No generation configs found!"));
 		}
 		try {
 			for(File file : Objects.requireNonNull(generationFolder.listFiles())) {
 				if(file.getName().endsWith(".json")) {
-					GenerationConfig config = new Gson().fromJson(FileUtils.readFileToString(file), GenerationConfig.class);
+					FileInputStream fileInputStream = new FileInputStream(file);
+					GenerationConfig config = new GenerationConfig(new JSONObject(IOUtils.toString(fileInputStream, StandardCharsets.UTF_8)));
 					configMap.put(file.getName().replace(".json", ""), config);
 				}
 			}
 		} catch(Exception exception) {
-			LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to load generation configs! Loading default configs...");
-			loadDefaultConfigs(generationFolder);
+			LorefulLoot.getInstance().logException("Failed to load generation configs! You must add configs to the moddata/config/ folder", exception);
 		}
-		LorefulLoot.log.log(java.util.logging.Level.INFO, "GenerationManager initialized.");
-	}
-
-	private static void loadDefaultConfigs(File generationFolder) {
-		try {
-			for(String path : defaultConfigs) {
-				InputStream defaultConfigStream = LorefulLoot.class.getResourceAsStream(path);
-				File defaultConfigFile = new File(generationFolder, path.substring(path.lastIndexOf("/") + 1));
-				assert defaultConfigStream != null;
-				FileUtils.copyInputStreamToFile(defaultConfigStream, defaultConfigFile);
-				configMap.put(defaultConfigFile.getName().replace(".json", ""), new Gson().fromJson(FileUtils.readFileToString(defaultConfigFile), GenerationConfig.class));
-			}
-		} catch(Exception exception) {
-			exception.printStackTrace();
-		}
+		LorefulLoot.getInstance().logInfo("Loaded " + configMap.size() + " generation configs.");
 	}
 
 	private static File getGenerationFolder() {
-		File generationFolder = new File(DataUtils.getWorldDataPath(), "config/generation");
-		if(! generationFolder.exists()) generationFolder.mkdirs();
+		File generationFolder = new File(DataUtils.getResourcesPath(), "config");
+		if(!generationFolder.exists()) generationFolder.mkdirs();
 		return generationFolder;
 	}
 
 	public static void generateForSector(Sector sector, boolean force) {
 		try {
 			for(GenerationConfig config : configMap.values()) {
-				for(SpawnGroup spawnGroup : config.getSpawnGroups()) {
-					if(spawnGroup.getConditions().length == 0) {
-						for(EntitySpawn entitySpawn : spawnGroup.getSpawns()) {
-							Random random = new Random();
-							if(random.nextFloat() <= entitySpawn.getWeight() || force) createEntity(entitySpawn, sector);
-						}
-					} else {
-						for(SpawnCondition spawnCondition : spawnGroup.getConditions()) {
-							switch(spawnCondition.getName()) {
-								case "sector-type":
-									if(sector.getSectorType().name().equals(spawnCondition.getValue())) {
-										for(EntitySpawn entitySpawn : spawnGroup.getSpawns()) {
-											Random random = new Random();
-											if(random.nextFloat() <= entitySpawn.getWeight() || force) createEntity(entitySpawn, sector);
-										}
-									}
-									break;
-							}
-						}
-					}
-				}
+				if(force || new Random().nextFloat() <= config.getWeight()) createEntity(config, sector);
 			}
 		} catch(Exception exception) {
-			exception.printStackTrace();
-			LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to generate for sector " + sector.pos + "!");
+			LorefulLoot.getInstance().logException("Failed to generate entities for sector " + sector.pos + "!", exception);
 		}
 	}
 
-	private static void createEntity(EntitySpawn entitySpawn, Sector sector) {
+	private static void createEntity(final GenerationConfig config, Sector sector) {
 		SegmentControllerOutline<?> scOutline = null;
 		try {
 			scOutline = BluePrintController.active.loadBluePrint(
 					GameServerState.instance,
-					entitySpawn.getBpName(),
-					entitySpawn.getLoreName(),
+					config.getName(),
+					config.genName(),
 					getRandomTransformInSector(),
-					- 1,
-					entitySpawn.getFactionId(),
+					-1,
+					0,
 					sector.pos,
-					entitySpawn.getFactionName(),
+					"LorefulLoot",
 					PlayerState.buffer,
 					null,
 					false,
 					new ChildStats(false)
 			);
 		} catch(Exception exception) {
-			LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to create entity " + entitySpawn.getName() + " in sector " + sector.pos + "!");
+			LorefulLoot.getInstance().logException("Failed to create entity for sector " + sector.pos + "!", exception);
 		}
 
-		SegmentController segmentController = null;
 		if(scOutline != null) {
 			try {
-				segmentController = scOutline.spawn(
+				final SegmentController controller = scOutline.spawn(
 						sector.pos,
 						false,
 						new ChildStats(false),
 						new SegmentControllerSpawnCallbackDirect(GameServerState.instance, sector.pos) {
 							@Override
-							public void onNoDocker() { //in vanilla used to write a debug line.
+							public void onNoDocker() {
+
 							}
 						});
+				new Thread() {
+					@Override
+					public void run() {
+						try {
+							sleep(1000);
+							controller.getSegmentBuffer().restructBB();
+							MiscUtils.fillInventories((Ship) controller, config.genItemStacks());
+							MiscUtils.wreckShip((Ship) controller);
+						} catch(Exception exception) {
+							exception.printStackTrace();
+						}
+					}
+				}.start();
 			} catch(Exception exception) {
-				LorefulLoot.log.log(java.util.logging.Level.WARNING, "Failed to spawn entity " + entitySpawn.getName() + " in sector " + sector.pos + "!");
+				LorefulLoot.getInstance().logException("Failed to spawn entity for sector " + sector.pos + "!", exception);
 			}
-		}
-
-		if(segmentController != null) {
-			segmentController.setMinable(true);
-			segmentController.getSegmentBuffer().restructBB();
-			MiscUtils.wreckShip(segmentController, entitySpawn);
 		}
 	}
 
@@ -306,6 +157,7 @@ public class GenerationManager {
 				if(!entity.getRealName().contains("[Wreckage]")) {
 					entity.setRealName(entity.getRealName() + " [Wreckage]");
 					entity.setFactionId(0);
+					entity.setScrap(true);
 					entity.setMinable(true);
 					entity.setMarkedForDeletePermanentIncludingDocks(false);
 					entity.setMarkedForDeleteVolatileIncludingDocks(false);
