@@ -2,8 +2,7 @@ package thederpgamer.lorefulloot.manager;
 
 import api.listener.Listener;
 import api.listener.events.entity.SegmentControllerOverheatEvent;
-import api.listener.events.world.AsteroidPreSpawnEvent;
-import api.listener.events.world.PlanetCreateEvent;
+import api.listener.events.world.sector.SectorGenerateEvent;
 import api.mod.StarLoader;
 import thederpgamer.lorefulloot.LorefulLoot;
 
@@ -15,17 +14,10 @@ import thederpgamer.lorefulloot.LorefulLoot;
 public class EventManager {
 
 	public static void initialize(LorefulLoot instance) {
-		StarLoader.registerListener(AsteroidPreSpawnEvent.class, new Listener<AsteroidPreSpawnEvent>() {
+		StarLoader.registerListener(SectorGenerateEvent.class, new Listener<SectorGenerateEvent>() {
 			@Override
-			public void onEvent(AsteroidPreSpawnEvent event) {
-				GenerationManager.generateForSector(event.getSector(), false);
-			}
-		}, instance);
-
-		StarLoader.registerListener(PlanetCreateEvent.class, new Listener<PlanetCreateEvent>() {
-			@Override
-			public void onEvent(PlanetCreateEvent event) {
-				GenerationManager.generateForSector(event.getSector(), false);
+			public void onEvent(SectorGenerateEvent event) {
+				GenerationManager.generateForSector(event.getSector(), event.getType(), false);
 			}
 		}, instance);
 
@@ -42,6 +34,6 @@ public class EventManager {
 			}
 		}, instance);
 
-		LorefulLoot.getInstance().logInfo("Initialized EventManager");
+		LorefulLoot.getInstance().logInfo("Initialized Events");
 	}
 }

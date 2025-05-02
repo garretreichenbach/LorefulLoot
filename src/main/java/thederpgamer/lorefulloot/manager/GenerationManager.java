@@ -9,6 +9,7 @@ import org.schema.game.common.controller.SegmentController;
 import org.schema.game.common.controller.Ship;
 import org.schema.game.common.data.player.PlayerState;
 import org.schema.game.common.data.world.Sector;
+import org.schema.game.common.data.world.SectorInformation;
 import org.schema.game.server.controller.BluePrintController;
 import org.schema.game.server.data.GameServerState;
 import org.schema.game.server.data.ServerConfig;
@@ -16,7 +17,7 @@ import org.schema.game.server.data.blueprint.ChildStats;
 import org.schema.game.server.data.blueprint.SegmentControllerOutline;
 import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirect;
 import thederpgamer.lorefulloot.LorefulLoot;
-import thederpgamer.lorefulloot.data.generation.GenerationConfig;
+import thederpgamer.lorefulloot.data.generation.GenerationConfigOld;
 import thederpgamer.lorefulloot.utils.DataUtils;
 import thederpgamer.lorefulloot.utils.MiscUtils;
 
@@ -24,9 +25,9 @@ import javax.vecmath.Vector3f;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.Random;
 
 /**
  * Manager class for handling generation of entities and loot.
@@ -35,7 +36,7 @@ import java.util.Random;
  */
 public class GenerationManager {
 
-	public static final HashMap<String, GenerationConfig> configMap = new HashMap<>();
+	public static final HashMap<String, GenerationConfigOld> configMap = new HashMap<>();
 	public static final HashMap<SegmentController, Long> overheatMap = new HashMap<>();
 
 	public static void initialize() {
@@ -47,7 +48,7 @@ public class GenerationManager {
 			for(File file : Objects.requireNonNull(generationFolder.listFiles())) {
 				if(file.getName().endsWith(".json")) {
 					FileInputStream fileInputStream = new FileInputStream(file);
-					GenerationConfig config = new GenerationConfig(new JSONObject(IOUtils.toString(fileInputStream, StandardCharsets.UTF_8)));
+					GenerationConfigOld config = new GenerationConfigOld(new JSONObject(IOUtils.toString(fileInputStream, StandardCharsets.UTF_8)));
 					configMap.put(file.getName().replace(".json", ""), config);
 				}
 			}
@@ -63,17 +64,27 @@ public class GenerationManager {
 		return generationFolder;
 	}
 
-	public static void generateForSector(Sector sector, boolean force) {
+	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, boolean force) {
 		try {
-			for(GenerationConfig config : configMap.values()) {
-				if(force || new Random().nextFloat() <= config.getWeight()) createEntity(config, sector);
+			ArrayList<GenerationConfigOld> possibleGens = getPossibleGens(sector, sectorType);
+			if(!possibleGens.isEmpty()) {
+				for(GenerationConfigOld config : possibleGens) {
+					if(force || Math.random() <= config.getWeight()) createEntity(config, sector);
+				}
+			} else {
+				LorefulLoot.getInstance().logWarning("No generation configs found for sector type " + sectorType.name() + "!");
 			}
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to generate entities for sector " + sector.pos + "!", exception);
 		}
 	}
 
-	private static void createEntity(final GenerationConfig config, Sector sector) {
+	private static ArrayList<GenerationConfigOld> getPossibleGens(Sector sector, SectorInformation.SectorType sectorType) {
+
+		return null;
+	}
+
+	private static void createEntity(final GenerationConfigOld config, Sector sector) {
 		SegmentControllerOutline<?> scOutline = null;
 		try {
 			scOutline = BluePrintController.active.loadBluePrint(

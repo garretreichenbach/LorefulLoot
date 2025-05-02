@@ -13,17 +13,17 @@ import java.util.Random;
  *
  * @author TheDerpGamer
  */
-public class GenerationConfig implements JSONSerializable {
+public class GenerationConfigOld implements JSONSerializable {
 
 	private String name;
 	private float weight;
 	private LootItemStack[] itemStacks;
 
-	public GenerationConfig(JSONObject json) {
+	public GenerationConfigOld(JSONObject json) {
 		fromJSON(json);
 	}
 
-	public GenerationConfig(String path, String name, float weight, LootItemStack... itemStacks) {
+	public GenerationConfigOld(String path, String name, float weight, LootItemStack... itemStacks) {
 		this.name = name;
 		this.weight = weight;
 		this.itemStacks = itemStacks;
