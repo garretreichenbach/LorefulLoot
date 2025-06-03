@@ -9,7 +9,9 @@ public class ConfigManager {
 	private static final String[] defaultMainConfig = {
 			"debug-mode: false",
 			"max-world-logs: 5",
-			"generate-shipwrecks-from-combat: true"
+			"generate-shipwrecks-from-combat: true",
+			"restrict-lua-libs: false",
+			"whitelisted-lua-libs: base,string,table,math,package,bit32"
 	};
 
 	public static void initialize(LorefulLoot instance) {
