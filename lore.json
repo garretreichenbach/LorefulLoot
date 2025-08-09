@@ -33,7 +33,7 @@
 		{
 			"name": "Perilous Journey",
 			"header": "Captain's Log [11.15.3117]:",
-			"content": "Captain’s Log [11.15.3117]: \nIf there was one thing I’ve despised most about our journeys, it has to be the constant harassment from raiders. I knew this region of the galaxy was filled with criminal scum, but I assumed the Guild would provide us escorts.\n\nThe only reason we are still alive is due to my head diplomat, who is incredibly gifted at her job. Even so, we have still had to hand over credits occasionally to some of the more persistent pirates.\n\nThe problem is that these bandits are only interested in profit and some excitement. I would hate to believe that someone actually views these sorts of ruffians as potential business partners. Yet I have heard rumors of corruption and even some collaboration in parts of the Guild’s upper command…",
+			"content": "If there was one thing I’ve despised most about our journeys, it has to be the constant harassment from raiders. I knew this region of the galaxy was filled with criminal scum, but I assumed the Guild would provide us escorts.\n\nThe only reason we are still alive is due to my head diplomat, who is incredibly gifted at her job. Even so, we have still had to hand over credits occasionally to some of the more persistent pirates.\n\nThe problem is that these bandits are only interested in profit and some excitement. I would hate to believe that someone actually views these sorts of ruffians as potential business partners. Yet I have heard rumors of corruption and even some collaboration in parts of the Guild’s upper command…",
 			"type": "LOG",
 			"weight": 0.6,
 			"conditions": [

@@ -33,7 +33,6 @@ public class EventManager {
 				}
 			}
 		}, instance);
-
 		LorefulLoot.getInstance().logInfo("Initialized Events");
 	}
 }

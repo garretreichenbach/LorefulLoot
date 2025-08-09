@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils;
 import thederpgamer.lorefulloot.LorefulLoot;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -36,6 +37,25 @@ public class DataUtils {
 			zipInputStream.close();
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to unzip file: " + src.getPath(), exception);
+		}
+	}
+
+	public static void unzip(InputStream inputStream, File destination) {
+		try {
+			ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+			ZipEntry zipEntry;
+			while((zipEntry = zipInputStream.getNextEntry()) != null) {
+				File file = new File(destination, zipEntry.getName());
+				if(zipEntry.isDirectory()) file.mkdirs();
+				else {
+					file.getParentFile().mkdirs();
+					FileUtils.copyInputStreamToFile(zipInputStream, file);
+				}
+				zipInputStream.closeEntry();
+			}
+			zipInputStream.close();
+		} catch(Exception exception) {
+			LorefulLoot.getInstance().logException("Failed to unzip input stream", exception);
 		}
 	}
 }

@@ -1,5 +1,6 @@
 package thederpgamer.lorefulloot.data.lua.item;
 
+import thederpgamer.lorefulloot.data.lua.LuaCallable;
 import thederpgamer.lorefulloot.data.lua.LuaData;
 
 /**
@@ -29,18 +30,22 @@ public class ItemStack extends LuaData {
 		return getId() == other.getId() && getCount() == other.getCount();
 	}
 
+	@LuaCallable
 	public short getId() {
 		return get(1).toshort();
 	}
 
+	@LuaCallable
 	public int getCount() {
 		return get(2).toint();
 	}
 
+	@LuaCallable
 	public void setId(short id) {
 		set(1, valueOf(id));
 	}
 
+	@LuaCallable
 	public void setCount(int count) {
 		set(2, valueOf(count));
 	}

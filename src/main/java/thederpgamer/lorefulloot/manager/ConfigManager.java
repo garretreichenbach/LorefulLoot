@@ -10,7 +10,7 @@ public class ConfigManager {
 			"debug-mode: false",
 			"max-world-logs: 5",
 			"generate-shipwrecks-from-combat: true",
-			"restrict-lua-libs: false",
+			"restrict-lua-libs: true",
 			"whitelisted-lua-libs: base,string,table,math,package,bit32"
 	};
 

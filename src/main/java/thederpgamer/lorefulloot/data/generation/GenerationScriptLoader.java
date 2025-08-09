@@ -1,5 +1,6 @@
 package thederpgamer.lorefulloot.data.generation;
 
+import com.google.common.io.Files;
 import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.Bit32Lib;
@@ -11,7 +12,12 @@ import org.luaj.vm2.lib.jse.JseMathLib;
 import thederpgamer.lorefulloot.data.lua.item.ItemStack;
 import thederpgamer.lorefulloot.data.lua.item.LootTable;
 import thederpgamer.lorefulloot.manager.ConfigManager;
+import thederpgamer.lorefulloot.utils.DataUtils;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
@@ -36,22 +42,27 @@ public class GenerationScriptLoader {
 			}
 		}
 
+		@Override
 		public LuaValue setmetatable(LuaValue metatable) {
 			return error("table is read-only");
 		}
 
+		@Override
 		public void set(int key, LuaValue value) {
 			error("table is read-only");
 		}
 
+		@Override
 		public void rawset(int key, LuaValue value) {
 			error("table is read-only");
 		}
 
+		@Override
 		public void rawset(LuaValue key, LuaValue value) {
 			error("table is read-only");
 		}
 
+		@Override
 		public LuaValue remove(int pos) {
 			return error("table is read-only");
 		}
@@ -78,7 +89,9 @@ public class GenerationScriptLoader {
 				LuaValue value = globals.get(key);
 				if(value instanceof LuaTable) {
 					LuaTable table = (LuaTable) value;
-					if(table.getmetatable() != null) table.setmetatable(new ReadOnlyLuaTable(table.getmetatable()));
+					if(table.getmetatable() != null) {
+						table.setmetatable(new ReadOnlyLuaTable(table.getmetatable()));
+					}
 				}
 				boolean whitelisted = false;
 				for(String lib : whitelistedLibs) {
@@ -87,7 +100,9 @@ public class GenerationScriptLoader {
 						break;
 					}
 				}
-				if(!whitelisted) globals.set(key, LuaValue.NIL);
+				if(!whitelisted) {
+					globals.set(key, LuaValue.NIL);
+				}
 			}
 		}
 
@@ -100,7 +115,18 @@ public class GenerationScriptLoader {
 	 * @param globals The Lua environment to load the functions into.
 	 */
 	public static void loadScriptFunctions(Globals globals) {
-		globals.set("lootTable", new LuaTable());
+		for(Class<?> clazz : classes) {
+			try {
+				InputStream stream = clazz.getResourceAsStream("/" + clazz.getName().replace(".", "/") + ".class");
+				if(stream == null) {
+					throw new RuntimeException("Class resource not found: " + clazz.getName());
+				}
+				LuaValue luaClass = LuaValue.userdataOf(clazz);
+				globals.set(clazz.getSimpleName(), luaClass);
+			} catch(Exception e) {
+				throw new RuntimeException("Failed to load class: " + clazz.getName(), e);
+			}
+		}
 	}
 
 	/**
@@ -109,10 +135,21 @@ public class GenerationScriptLoader {
 	 * @param script The Lua script to load and execute.
 	 * @return The result of the script execution.
 	 */
-	public static LuaValue loadScript(String script) {
+	public static LuaValue loadScript(String script) throws IOException {
 		Globals globals = initializeLuaEnvironment();
-		LuaValue chunk = globals.load(script);
+		String rawScript = Files.toString(new File(DataUtils.getResourcesPath() + "/scripts/" + script + ".lua"), StandardCharsets.UTF_8);
+		LuaValue chunk = globals.load(rawScript);
 		if(chunk.isfunction()) return chunk.call();
 		else return chunk;
+	}
+
+	public static ArrayList<LuaValue> getAllScripts() {
+		ArrayList<LuaValue> scripts = new ArrayList<>();
+		Globals globals = initializeLuaEnvironment();
+		for(LuaValue key : globals.keys()) {
+			LuaValue value = globals.get(key);
+			scripts.add(value);
+		}
+		return scripts;
 	}
 }

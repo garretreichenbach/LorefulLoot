@@ -87,8 +87,6 @@ public class MiscUtils {
 	}
 
 	public static void fillInventories(Ship controller, ItemStack[] itemStacks) {
-		controller.setScrap(true);
-		controller.setMinable(true);
 		InventoryMap map = controller.getInventories();
 		for(int i = 0; i < map.inventoriesList.size(); i++) {
 			for(ItemStack itemStack : itemStacks) {

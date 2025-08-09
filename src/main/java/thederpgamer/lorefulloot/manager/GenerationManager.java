@@ -2,30 +2,20 @@ package thederpgamer.lorefulloot.manager;
 
 import api.listener.events.entity.SegmentControllerOverheatEvent;
 import com.bulletphysics.linearmath.Transform;
-import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
+import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.LuaValue;
 import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
-import org.schema.game.common.controller.Ship;
-import org.schema.game.common.data.player.PlayerState;
 import org.schema.game.common.data.world.Sector;
 import org.schema.game.common.data.world.SectorInformation;
-import org.schema.game.server.controller.BluePrintController;
-import org.schema.game.server.data.GameServerState;
 import org.schema.game.server.data.ServerConfig;
-import org.schema.game.server.data.blueprint.ChildStats;
-import org.schema.game.server.data.blueprint.SegmentControllerOutline;
-import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirect;
 import thederpgamer.lorefulloot.LorefulLoot;
-import thederpgamer.lorefulloot.data.generation.GenerationConfigOld;
+import thederpgamer.lorefulloot.data.generation.GenerationScriptLoader;
 import thederpgamer.lorefulloot.utils.DataUtils;
-import thederpgamer.lorefulloot.utils.MiscUtils;
 
 import javax.vecmath.Vector3f;
 import java.io.File;
-import java.io.FileInputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -36,87 +26,83 @@ import java.util.Objects;
  */
 public class GenerationManager {
 
-	public static final HashMap<String, GenerationConfigOld> configMap = new HashMap<>();
 	public static final HashMap<SegmentController, Long> overheatMap = new HashMap<>();
 
 	public static void initialize() {
-		File generationFolder = getGenerationFolder();
-		if(generationFolder.listFiles() == null || Objects.requireNonNull(generationFolder.listFiles()).length == 0) {
-			LorefulLoot.getInstance().logException("No generation configs found! You must add configs to the moddata/config folder", new Exception("No generation configs found!"));
-		}
-		try {
-			for(File file : Objects.requireNonNull(generationFolder.listFiles())) {
-				if(file.getName().endsWith(".json")) {
-					FileInputStream fileInputStream = new FileInputStream(file);
-					GenerationConfigOld config = new GenerationConfigOld(new JSONObject(IOUtils.toString(fileInputStream, StandardCharsets.UTF_8)));
-					configMap.put(file.getName().replace(".json", ""), config);
+		File scriptsFolder = new File(DataUtils.getWorldDataPath(), "scripts");
+		//Load default scripts
+		if(!scriptsFolder.exists() || scriptsFolder.listFiles() == null || Objects.requireNonNull(scriptsFolder.listFiles()).length == 0) {
+			scriptsFolder.mkdirs();
+			try {
+				InputStream inputStream = GenerationManager.class.getResourceAsStream("default_scripts.zip");
+				if(inputStream != null) {
+					File defaultGenerationFile = new File(scriptsFolder, "default_scripts.zip");
+					DataUtils.unzip(inputStream, scriptsFolder);
+					LorefulLoot.getInstance().logInfo("Default generation scripts copied to: " + defaultGenerationFile.getAbsolutePath());
+				} else {
+					LorefulLoot.getInstance().logWarning("Default generation scripts resource not found!");
 				}
+			} catch(Exception exception) {
+				LorefulLoot.getInstance().logException("Failed to copy default generation script!", exception);
 			}
-		} catch(Exception exception) {
-			LorefulLoot.getInstance().logException("Failed to load generation configs! You must add configs to the moddata/config/ folder", exception);
 		}
-		LorefulLoot.getInstance().logInfo("Loaded " + configMap.size() + " generation configs.");
-	}
-
-	private static File getGenerationFolder() {
-		File generationFolder = new File(DataUtils.getResourcesPath(), "config");
-		if(!generationFolder.exists()) generationFolder.mkdirs();
-		return generationFolder;
+		//Load default blueprints
+		File blueprintsFolder = new File(DataUtils.getWorldDataPath(), "blueprints");
+		if(!blueprintsFolder.exists() || blueprintsFolder.listFiles() == null || Objects.requireNonNull(blueprintsFolder.listFiles()).length == 0) {
+			blueprintsFolder.mkdirs();
+			try {
+				InputStream inputStream = GenerationManager.class.getResourceAsStream("default_blueprints.zip");
+				if(inputStream != null) {
+					DataUtils.unzip(inputStream, blueprintsFolder);
+					LorefulLoot.getInstance().logInfo("Default blueprints copied to: " + blueprintsFolder.getAbsolutePath());
+				} else {
+					LorefulLoot.getInstance().logWarning("Default blueprints resource not found!");
+				}
+			} catch(Exception exception) {
+				LorefulLoot.getInstance().logException("Failed to copy default blueprint!", exception);
+			}
+		}
 	}
 
 	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, boolean force) {
 		try {
-			ArrayList<GenerationConfigOld> possibleGens = getPossibleGens(sector, sectorType);
-			if(!possibleGens.isEmpty()) {
-				for(GenerationConfigOld config : possibleGens) {
-					if(force || Math.random() <= config.getWeight()) createEntity(config, sector);
+			for(LuaValue value : GenerationScriptLoader.getAllScripts()) {
+				if(value.isstring()) {
+					String scriptName = value.toString();
+					LorefulLoot.getInstance().logInfo("Executing generation script: " + scriptName);
+					LuaValue script = GenerationScriptLoader.loadScript(scriptName);
+					if(script != null) {
+						LuaTable args = new LuaTable();
+						args.set("sector_pos", LuaValue.valueOf(sector.pos.toString()));
+						args.set("sector_type", LuaValue.valueOf(sectorType.name()));
+						args.set("forced", LuaValue.valueOf(force));
+						script.call(args);
+					} else {
+						LorefulLoot.getInstance().logWarning("Failed to load generation script: " + scriptName);
+					}
 				}
-			} else {
-				LorefulLoot.getInstance().logWarning("No generation configs found for sector type " + sectorType.name() + "!");
 			}
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to generate entities for sector " + sector.pos + "!", exception);
 		}
 	}
 
-	private static ArrayList<GenerationConfigOld> getPossibleGens(Sector sector, SectorInformation.SectorType sectorType) {
-
-		return null;
-	}
-
-	private static void createEntity(final GenerationConfigOld config, Sector sector) {
+	/*private static void createEntity(final GenerationConfigOld config, Sector sector) {
 		SegmentControllerOutline<?> scOutline = null;
 		try {
-			scOutline = BluePrintController.active.loadBluePrint(
-					GameServerState.instance,
-					config.getName(),
-					config.genName(),
-					getRandomTransformInSector(),
-					-1,
-					0,
-					sector.pos,
-					"LorefulLoot",
-					PlayerState.buffer,
-					null,
-					false,
-					new ChildStats(false)
-			);
+			scOutline = BluePrintController.active.loadBluePrint(GameServerState.instance, config.getName(), config.genName(), getRandomTransformInSector(), -1, 0, sector.pos, "LorefulLoot", PlayerState.buffer, null, false, new ChildStats(false));
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to create entity for sector " + sector.pos + "!", exception);
 		}
 
 		if(scOutline != null) {
 			try {
-				final SegmentController controller = scOutline.spawn(
-						sector.pos,
-						false,
-						new ChildStats(false),
-						new SegmentControllerSpawnCallbackDirect(GameServerState.instance, sector.pos) {
-							@Override
-							public void onNoDocker() {
+				final SegmentController controller = scOutline.spawn(sector.pos, false, new ChildStats(false), new SegmentControllerSpawnCallbackDirect(GameServerState.instance, sector.pos) {
+					@Override
+					public void onNoDocker() {
 
-							}
-						});
+					}
+				});
 				new Thread() {
 					@Override
 					public void run() {
@@ -134,7 +120,7 @@ public class GenerationManager {
 				LorefulLoot.getInstance().logException("Failed to spawn entity for sector " + sector.pos + "!", exception);
 			}
 		}
-	}
+	}*/
 
 	private static Transform getRandomTransformInSector() {
 		//Gen Random Position
@@ -163,12 +149,13 @@ public class GenerationManager {
 	public static void createShipWreckFromCombat(SegmentControllerOverheatEvent event) {
 		SegmentController entity = event.getEntity();
 		if(!overheatMap.containsKey(entity)) {
-			if(entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()) > 15000) overheatMap.put(entity, entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()));
-			else {
+			if(entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()) > 15000) {
+				overheatMap.put(entity, entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()));
+			} else {
 				if(!entity.getRealName().contains("[Wreckage]")) {
 					entity.setRealName(entity.getRealName() + " [Wreckage]");
 					entity.setFactionId(0);
-					entity.setScrap(true);
+					entity.setScrap(false);
 					entity.setMinable(true);
 					entity.setMarkedForDeletePermanentIncludingDocks(false);
 					entity.setMarkedForDeleteVolatileIncludingDocks(false);
