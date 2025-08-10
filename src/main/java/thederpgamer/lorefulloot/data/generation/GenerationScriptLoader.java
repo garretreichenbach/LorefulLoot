@@ -6,6 +6,8 @@ import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.*;
 import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JseMathLib;
+import org.schema.common.util.linAlg.Vector3i;
+import org.schema.game.common.data.world.SectorInformation;
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.lua.data.entity.EntityGenData;
 import thederpgamer.lorefulloot.lua.data.item.ItemStack;
@@ -150,14 +152,16 @@ public class GenerationScriptLoader {
 	 * @param script The Lua script to load and execute.
 	 * @return The result of the script execution.
 	 */
-	public static LuaValue loadScript(String script, LuaTable args) throws IOException {
+	public static LuaValue loadScript(String script, Vector3i sectorPos, SectorInformation.SectorType type) throws IOException {
 		// Reset globals to ensure latest class registrations
 		Globals globals = initializeLuaEnvironment();
-		globals.set("args", args);
+		LuaTable argsTable = new LuaTable();
+		argsTable.set("sectorPos", LuaValue.valueOf(sectorPos.toStringPure()));
+		argsTable.set("sectorType", LuaValue.valueOf(type.name()));
 		String rawScript = Files.toString(new File(DataUtils.getWorldDataPath() + "/scripts/" + script + ".lua"), StandardCharsets.UTF_8);
 		LuaValue chunk = globals.load(rawScript);
 		if(chunk.isfunction()) {
-			return chunk.call();
+			return chunk.call(argsTable);
 		} else {
 			return chunk;
 		}
