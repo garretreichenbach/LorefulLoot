@@ -22,7 +22,6 @@ public class EventManager {
 					return;
 				}
 				Vector4f starColor = galaxy.getSunColor(event.getSystem().getPos());
-				event.getSystem().getTemperature()
 				GenerationManager.generateForSector(event.getSector(), event.getType(), starColor, true);
 			}
 		}, instance);
