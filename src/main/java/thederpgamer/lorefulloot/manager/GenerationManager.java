@@ -5,7 +5,6 @@ import com.bulletphysics.linearmath.Transform;
 import org.apache.commons.io.FileUtils;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
-import org.schema.common.util.linAlg.Vector3i;
 import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
 import org.schema.game.common.controller.Ship;
@@ -47,9 +46,9 @@ public class GenerationManager {
 		if(!scriptsFolder.exists() || scriptsFolder.listFiles() == null || Objects.requireNonNull(scriptsFolder.listFiles()).length == 0) {
 			scriptsFolder.mkdirs();
 			try {
-				InputStream inputStream = LorefulLoot.getInstance().getJarResource("test_script.lua");
+				InputStream inputStream = LorefulLoot.getInstance().getJarResource("default_scripts/test_script.lua");
 				if(inputStream != null) {
-					File scriptFile = new File(scriptsFolder, "test_script.lua");
+					File scriptFile = new File(scriptsFolder, "default_scripts/test_script.lua");
 					FileUtils.copyInputStreamToFile(inputStream, scriptFile);
 					inputStream.close();
 				} else {

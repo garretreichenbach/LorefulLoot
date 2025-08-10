@@ -31,8 +31,6 @@ import java.util.Objects;
  * @author TheDerpGamer
  */
 public class GenerationScriptLoader {
-	
-	private static Globals globals;
 
 	public static final ArrayList<Class<?>> classes = new ArrayList<Class<?>>() {
 		{
@@ -50,7 +48,7 @@ public class GenerationScriptLoader {
 	 * @return The initialized Lua environment.
 	 */
 	public static Globals initializeLuaEnvironment() {
-		globals = new Globals();
+		Globals globals = new Globals();
 		globals.load(new JseBaseLib());
 		globals.load(new PackageLib());
 		globals.load(new StringLib());
@@ -185,6 +183,7 @@ public class GenerationScriptLoader {
 	}
 
 	private static class ReadOnlyLuaTable extends LuaTable {
+
 		public ReadOnlyLuaTable(LuaValue table) {
 			presize(table.length(), 0);
 			for(Varargs n = table.next(NIL); !n.arg1().isnil(); n = table.next(n.arg1())) {
