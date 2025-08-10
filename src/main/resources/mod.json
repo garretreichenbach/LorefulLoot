@@ -3,7 +3,7 @@
   "author": "TheDerpGamer",
   "description": "Adds naturally spawning wrecks filled with loot.",
   "version": "2.0.0 - Megalith",
-  "starmade_version": "0.203.175",
+  "starmade_version": "0.204.102",
   "client_mod": false,
   "server_mod": false,
   "main_class": "thederpgamer.lorefulloot.LorefulLoot",

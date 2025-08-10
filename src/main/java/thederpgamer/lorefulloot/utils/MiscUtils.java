@@ -3,17 +3,26 @@ package thederpgamer.lorefulloot.utils;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.schema.common.util.linAlg.Vector3b;
 import org.schema.common.util.linAlg.Vector3i;
+import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
 import org.schema.game.common.controller.Ship;
 import org.schema.game.common.controller.elements.InventoryMap;
 import org.schema.game.common.controller.elements.ModuleExplosion;
 import org.schema.game.common.controller.rails.RailRelation;
-import org.schema.game.common.data.ManagedSegmentController;
+import org.schema.game.common.data.element.Element;
+import org.schema.game.common.data.element.ElementInformation;
+import org.schema.game.common.data.element.ElementKeyMap;
+import org.schema.game.common.data.element.meta.MetaObject;
+import org.schema.game.common.data.element.meta.MetaObjectManager;
+import org.schema.game.common.data.player.inventory.Inventory;
+import org.schema.game.common.data.player.inventory.NoSlotFreeException;
 import org.schema.game.common.data.world.Segment;
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.lua.data.item.ItemStack;
+import thederpgamer.lorefulloot.lua.data.item.meta.MetaItem;
 
 import javax.vecmath.Vector3f;
+import java.util.Locale;
 
 /**
  * Utility class for miscellaneous functions.
@@ -27,30 +36,30 @@ public class MiscUtils {
 	 * @param entity Entity to wreck.
 	 * <p>Note: Make sure you save a copy of your ship before using this function!</p>
 	 */
-	public static void wreckShip(final Ship entity) {
+	public static void wreckShip(final ManagedUsableSegmentController<?> entity, final ItemStack[] lootArray) {
 		(new Thread() {
 			@Override
 			public void run() {
 				try {
 					for(int j = 0; j < 5; j++) {
-						entity.getManagerContainer().getShieldAddOn().setShields(0);
-						entity.getManagerContainer().getShieldAddOn().setShieldCapacityHP(0);
-						entity.getManagerContainer().getShieldAddOn().setRegenEnabled(false);
-						int explosionCap = 15;
-						float radius = 10;
+						int explosionCap = 10;
+						float radius = 5;
 						LongArrayList l = new LongArrayList(explosionCap);
-						for(int i = 0; i < explosionCap; i++) l.add(getRandomIndex(entity, 0));
+						for(int i = 0; i < explosionCap; i++) {
+							l.add(getRandomIndex(entity, 0));
+						}
 						long index = getRandomIndex(entity, 0);
-						ModuleExplosion expl = new ModuleExplosion(l, 5, (int) radius, 50000000, index, ModuleExplosion.ExplosionCause.STABILITY, entity.getBoundingBox());
-						expl.setChain(true);
-						((ManagedSegmentController<?>) entity).getManagerContainer().addModuleExplosions(expl);
+						ModuleExplosion expl = new ModuleExplosion(l, 5, (int) radius, Integer.MAX_VALUE, index, ModuleExplosion.ExplosionCause.STABILITY, entity.getBoundingBox());
+						expl.setChain(false);
+						entity.getManagerContainer().addModuleExplosions(expl);
 					}
 
-                    if(!entity.checkCore(entity.getSegmentBuffer().getPointUnsave(Ship.core))) {
+					//If the core got destroyed, delete the ship.
+                    if(!entity.checkCore(entity.getSegmentBuffer().getPointUnsave(Ship.core)) || entity.getMass() <= 1000) {
 						entity.setMarkedForDeletePermanentIncludingDocks(true);
 						entity.setMarkedForDeleteVolatileIncludingDocks(true);
                     } else {
-						entity.setMinable(true);
+	                    fillInventories(entity, lootArray);
                     }
                 } catch(Exception exception) {
 					LorefulLoot.getInstance().logException("Failed to wreck ship: " + entity.getName(), exception);
@@ -88,16 +97,41 @@ public class MiscUtils {
 		return 0;
 	}
 
-	public static void fillInventories(Ship controller, ItemStack[] itemStacks) {
+	public static void fillInventories(ManagedUsableSegmentController<?> controller, ItemStack[] itemStacks) {
 		InventoryMap map = controller.getInventories();
 		for(int i = 0; i < map.inventoriesList.size(); i++) {
+			Inventory inventory = map.inventoriesList.get(i);
 			for(ItemStack itemStack : itemStacks) {
-				map.inventoriesList.get(i).putNextFreeSlot(itemStack.getId(), itemStack.getCount(), -1);
+				if(itemStack instanceof MetaItem) {
+					MetaObject metaObject = ((MetaItem) itemStack).getAsMetaObject();
+					try {
+						inventory.put(inventory.getFreeSlot(), metaObject);
+					} catch(NoSlotFreeException ignored) {}
+				} else {
+					inventory.putNextFreeSlot(itemStack.getId(), itemStack.getCount(), -1);
+				}
 			}
-			map.inventoriesList.get(i).sendAll();
+			inventory.sendAll();
 		}
 		for(RailRelation relation : controller.railController.next) {
-			fillInventories((Ship) relation.docked.getSegmentController(), itemStacks);
+			fillInventories((ManagedUsableSegmentController<?>) relation.docked.getSegmentController(), itemStacks);
 		}
+	}
+
+	public static short getItemIdFromName(String name) {
+		name = name.toUpperCase(Locale.ENGLISH).replace(" ", "_").replace("-", "_");
+		for(MetaObjectManager.MetaObjectType type : MetaObjectManager.MetaObjectType.values()) {
+			if(type.name().equals(name.replace(" ", "_").replace("-", "_"))) {
+				return type.type;
+			}
+		}
+		for(ElementInformation info : ElementKeyMap.infoArray) {
+			if(info == null) continue; // Skip null entries
+			String idName = info.idName;
+			if(name.equals(idName)) {
+				return info.id;
+			}
+		}
+		return Element.TYPE_NONE;
 	}
 }

@@ -3,22 +3,23 @@ package thederpgamer.lorefulloot.data.generation;
 import com.google.common.io.Files;
 import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.LuaC;
-import org.luaj.vm2.lib.Bit32Lib;
-import org.luaj.vm2.lib.PackageLib;
-import org.luaj.vm2.lib.StringLib;
-import org.luaj.vm2.lib.TableLib;
+import org.luaj.vm2.lib.*;
 import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JseMathLib;
+import thederpgamer.lorefulloot.LorefulLoot;
+import thederpgamer.lorefulloot.lua.data.entity.EntityGenData;
 import thederpgamer.lorefulloot.lua.data.item.ItemStack;
-import thederpgamer.lorefulloot.lua.data.item.LootTable;
+import thederpgamer.lorefulloot.lua.data.item.meta.LogBook;
+import thederpgamer.lorefulloot.lua.data.item.meta.MetaItem;
 import thederpgamer.lorefulloot.manager.ConfigManager;
 import thederpgamer.lorefulloot.utils.DataUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * Manages creation, loading, and execution of generation scripts.
@@ -26,11 +27,158 @@ import java.util.ArrayList;
  * @author TheDerpGamer
  */
 public class GenerationScriptLoader {
+	
+	private static Globals globals;
 
-	private static Class<?>[] classes = new Class[] {
-			ItemStack.class,
-			LootTable.class
+	public static final ArrayList<Class<?>> classes = new ArrayList<Class<?>>() {
+		{
+			add(ItemStack.class);
+			add(MetaItem.class);
+			add(LogBook.class);
+			add(EntityGenData.class);
+		}
 	};
+
+	/**
+	 * Initializes the Lua environment with the necessary libraries and settings.
+	 *
+	 * @return The initialized Lua environment.
+	 */
+	public static Globals initializeLuaEnvironment() {
+		globals = new Globals();
+		globals.load(new JseBaseLib());
+		globals.load(new PackageLib());
+		globals.load(new StringLib());
+		globals.load(new TableLib());
+		globals.load(new JseMathLib());
+		globals.load(new Bit32Lib());
+		LuaC.install(globals);
+		LuaString.s_metatable = new ReadOnlyLuaTable(LuaString.s_metatable);
+		if(ConfigManager.getMainConfig().getBoolean("restrict-lua-libs")) {
+			ArrayList<String> whitelistedLibs = ConfigManager.getMainConfig().getList("whitelisted-lua-libs");
+			for(LuaValue key : globals.keys()) {
+				LuaValue value = globals.get(key);
+				if(value instanceof LuaTable) {
+					LuaTable table = (LuaTable) value;
+					if(table.getmetatable() != null) {
+						table.setmetatable(new ReadOnlyLuaTable(table.getmetatable()));
+					}
+				}
+				boolean whitelisted = false;
+				for(String lib : whitelistedLibs) {
+					if(key.tojstring().equals(lib)) {
+						whitelisted = true;
+						break;
+					}
+				}
+				if(!whitelisted) {
+					globals.set(key, LuaValue.NIL);
+				}
+			}
+		}
+
+		for(final Class<?> clazz : classes) {
+			LuaTable classTable = new LuaTable();
+			LuaTable metaTable = new LuaTable();
+
+			// Register public constructors as __call metamethod
+			for(final Constructor<?> constructor : clazz.getConstructors()) {
+				VarArgFunction callFunc = new VarArgFunction() {
+					@Override
+					public Varargs invoke(Varargs args) {
+						try {
+							if(args.narg() < 2) {
+								return error("Not enough arguments for constructor of class: " + clazz.getSimpleName());
+							}
+							LuaValue[] luaArgs = new LuaValue[args.narg() - 1];
+							for(int i = 0; i < luaArgs.length; i++) {
+								luaArgs[i] = args.arg(i + 2); // Skip the first argument which is the class itself
+							}
+							// Convert Lua arguments to Java types
+							Object[] javaArgs = new Object[args.narg() - 1];
+							for(int i = 0; i < luaArgs.length; i++) {
+								if(luaArgs[i].isuserdata()) {
+									javaArgs[i] = luaArgs[i].touserdata();
+								} else if(luaArgs[i].isfunction()) {
+									javaArgs[i] = luaArgs[i].checkfunction(); // Convert Lua function to Java
+								} else if(luaArgs[i].isnil()) {
+									javaArgs[i] = null; // Convert Lua nil to Java null
+								} else if(luaArgs[i].isthread()) {
+									javaArgs[i] = luaArgs[i].checkthread(); // Convert Lua thread to Java
+								} else if(luaArgs[i].istable()) {
+									javaArgs[i] = luaArgs[i].checktable();
+								} else if(luaArgs[i].isuserdata() && luaArgs[i].checkuserdata() instanceof Enum) {
+									javaArgs[i] = luaArgs[i].checkuserdata(Enum.class); // Convert Lua enum to Java
+								} else if(luaArgs[i].isint()) {
+									javaArgs[i] = luaArgs[i].toint(); // Convert Lua number to Java
+								} else if(luaArgs[i].islong()) {
+									javaArgs[i] = luaArgs[i].tolong(); // Convert Lua number to Java long
+								} else if(luaArgs[i].isboolean()) {
+									javaArgs[i] = luaArgs[i].toboolean(); // Convert Lua boolean to Java
+								} else if(luaArgs[i].isnumber()) {
+									javaArgs[i] = luaArgs[i].tofloat(); // Convert Lua number to Java
+								} else if(luaArgs[i].isstring()) {
+									javaArgs[i] = luaArgs[i].tojstring(); // Convert Lua string to Java
+								} else {
+									javaArgs[i] = luaArgs[i]; // Use LuaValue directly for other types
+								}
+							}
+							Object instance = constructor.newInstance(javaArgs);
+							return userdataOf(instance);
+						} catch(Exception exception) {
+							LorefulLoot.getInstance().logException("Failed to invoke constructor for class: " + clazz.getSimpleName(), exception);
+							return NIL;
+						}
+					}
+				};
+				metaTable.set("__call", callFunc);
+				// Add :new method for Lua scripts
+				classTable.set("new", callFunc);
+				break; // Only one __call per class
+			}
+
+			classTable.setmetatable(metaTable);
+			globals.set(clazz.getSimpleName(), classTable);
+			LorefulLoot.getInstance().logInfo("Registered Lua class: " + clazz.getSimpleName());
+		}
+		return globals;
+	}
+
+	/**
+	 * Loads and executes a Lua script.
+	 *
+	 * @param script The Lua script to load and execute.
+	 * @return The result of the script execution.
+	 */
+	public static LuaValue loadScript(String script, LuaTable args) throws IOException {
+		// Reset globals to ensure latest class registrations
+		Globals globals = initializeLuaEnvironment();
+		globals.set("args", args);
+		String rawScript = Files.toString(new File(DataUtils.getWorldDataPath() + "/scripts/" + script + ".lua"), StandardCharsets.UTF_8);
+		LuaValue chunk = globals.load(rawScript);
+		if(chunk.isfunction()) {
+			return chunk.call();
+		} else {
+			return chunk;
+		}
+	}
+
+	public static ArrayList<String> getAllScripts() {
+		ArrayList<String> scripts = new ArrayList<>();
+		File scriptsFolder = new File(DataUtils.getWorldDataPath() + "/scripts");
+		if(!scriptsFolder.exists() || scriptsFolder.listFiles() == null || Objects.requireNonNull(scriptsFolder.listFiles()).length == 0) {
+			LorefulLoot.getInstance().logWarning("No scripts found in: " + scriptsFolder.getAbsolutePath());
+			return scripts;
+		}
+		for(File file : Objects.requireNonNull(scriptsFolder.listFiles())) {
+			if(file.isFile() && file.getName().endsWith(".lua")) {
+				String scriptName = file.getName().substring(0, file.getName().length() - 4);
+				LorefulLoot.getInstance().logInfo("Loading script: " + scriptName);
+				scripts.add(scriptName);
+			}
+		}
+		return scripts;
+	}
 
 	private static class ReadOnlyLuaTable extends LuaTable {
 		public ReadOnlyLuaTable(LuaValue table) {
@@ -66,91 +214,5 @@ public class GenerationScriptLoader {
 		public LuaValue remove(int pos) {
 			return error("table is read-only");
 		}
-	}
-
-	/**
-	 * Initializes the Lua environment with the necessary libraries and settings.
-	 *
-	 * @return The initialized Lua environment.
-	 */
-	public static Globals initializeLuaEnvironment() {
-		Globals globals = new Globals();
-		globals.load(new JseBaseLib());
-		globals.load(new PackageLib());
-		globals.load(new StringLib());
-		globals.load(new TableLib());
-		globals.load(new JseMathLib());
-		globals.load(new Bit32Lib());
-		LuaC.install(globals);
-		LuaString.s_metatable = new ReadOnlyLuaTable(LuaString.s_metatable);
-		if(ConfigManager.getMainConfig().getBoolean("restrict-lua-libs")) {
-			ArrayList<String> whitelistedLibs = ConfigManager.getMainConfig().getList("whitelisted-lua-libs");
-			for(LuaValue key : globals.keys()) {
-				LuaValue value = globals.get(key);
-				if(value instanceof LuaTable) {
-					LuaTable table = (LuaTable) value;
-					if(table.getmetatable() != null) {
-						table.setmetatable(new ReadOnlyLuaTable(table.getmetatable()));
-					}
-				}
-				boolean whitelisted = false;
-				for(String lib : whitelistedLibs) {
-					if(key.tojstring().equals(lib)) {
-						whitelisted = true;
-						break;
-					}
-				}
-				if(!whitelisted) {
-					globals.set(key, LuaValue.NIL);
-				}
-			}
-		}
-
-		loadScriptFunctions(globals);
-		return globals;
-	}
-
-	/**
-	 * Loads custom generation-related script functions into the Lua environment.
-	 * @param globals The Lua environment to load the functions into.
-	 */
-	public static void loadScriptFunctions(Globals globals) {
-		for(Class<?> clazz : classes) {
-			try {
-				InputStream stream = clazz.getResourceAsStream("/" + clazz.getName().replace(".", "/") + ".class");
-				if(stream == null) {
-					throw new RuntimeException("Class resource not found: " + clazz.getName());
-				}
-				LuaValue luaClass = LuaValue.userdataOf(clazz);
-				globals.set(clazz.getSimpleName(), luaClass);
-			} catch(Exception e) {
-				throw new RuntimeException("Failed to load class: " + clazz.getName(), e);
-			}
-		}
-	}
-
-	/**
-	 * Loads and executes a Lua script.
-	 *
-	 * @param script The Lua script to load and execute.
-	 * @return The result of the script execution.
-	 */
-	public static LuaValue loadScript(String script, LuaTable args) throws IOException {
-		Globals globals = initializeLuaEnvironment();
-		globals.set("args", args);
-		String rawScript = Files.toString(new File(DataUtils.getResourcesPath() + "/scripts/" + script + ".lua"), StandardCharsets.UTF_8);
-		LuaValue chunk = globals.load(rawScript);
-		if(chunk.isfunction()) return chunk.call();
-		else return chunk;
-	}
-
-	public static ArrayList<LuaValue> getAllScripts() {
-		ArrayList<LuaValue> scripts = new ArrayList<>();
-		Globals globals = initializeLuaEnvironment();
-		for(LuaValue key : globals.keys()) {
-			LuaValue value = globals.get(key);
-			scripts.add(value);
-		}
-		return scripts;
 	}
 }

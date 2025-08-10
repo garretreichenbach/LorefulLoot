@@ -1,56 +1,50 @@
 package thederpgamer.lorefulloot.lua.data.item;
 
-import api.utils.element.Blocks;
+import org.schema.game.common.data.element.Element;
 import org.schema.game.common.data.element.ElementKeyMap;
-import thederpgamer.lorefulloot.lua.LuaCallable;
 import thederpgamer.lorefulloot.lua.LuaData;
-
-import java.util.Locale;
+import thederpgamer.lorefulloot.utils.MiscUtils;
 
 /**
  * Represents an ItemStack in Lua.
  */
 public class ItemStack extends LuaData {
 
-	private Short id;
-	private Integer count;
+	private short id;
+	private int count;
 
-	public ItemStack(Short id, Integer count) {
-		this.id = id;
-		this.count = count;
-	}
-
-	public ItemStack(String name, Integer count) {
-		id = Blocks.valueOf(name.toUpperCase(Locale.ENGLISH).replaceAll(" ", "_")).getId();
-		if(!ElementKeyMap.isValidType(id)) {
+	public ItemStack(String name, int count) {
+		id = MiscUtils.getItemIdFromName(name);
+		if(id == Element.TYPE_NONE) {
 			throw new IllegalArgumentException("Invalid item name: " + name);
 		}
 		this.count = count;
 	}
 
-	@LuaCallable
-	public Short getId() {
+	public short getId() {
 		return id;
 	}
 
-	@LuaCallable
-	public void setId(Short id) {
-		if(!ElementKeyMap.isValidType(id)) {
-			throw new IllegalArgumentException("Invalid item ID: " + id);
-		}
+	public void setId(short id) {
 		this.id = id;
 	}
 
-	@LuaCallable
-	public Integer getCount() {
+	public int getCount() {
 		return count;
 	}
 
-	@LuaCallable
-	public void setCount(Integer count) {
+	public void setCount(int count) {
 		if(count < 0) {
 			throw new IllegalArgumentException("Count cannot be negative: " + count);
 		}
 		this.count = count;
+	}
+
+	public String getIdName() {
+		return ElementKeyMap.getInfo(id).idName;
+	}
+
+	public String getName() {
+		return ElementKeyMap.getInfo(id).name;
 	}
 }

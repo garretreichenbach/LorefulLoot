@@ -1,54 +1,41 @@
 package thederpgamer.lorefulloot.lua.data.entity;
 
-import thederpgamer.lorefulloot.lua.LuaCallable;
+import org.luaj.vm2.LuaTable;
 import thederpgamer.lorefulloot.lua.LuaData;
-import thederpgamer.lorefulloot.lua.data.item.ItemStack;
 
 public class EntityGenData extends LuaData {
 
 	private String bpName;
 	private String entityName;
-	private ItemStack[] loot;
+	private LuaTable loot;
 
-	public EntityGenData(String bpName, String entityName, ItemStack[] loot) {
+	public EntityGenData(String bpName, String entityName, LuaTable loot) {
 		this.bpName = bpName;
 		this.entityName = entityName;
 		this.loot = loot;
 	}
 
-	public EntityGenData(String bpName, String entityName) {
-		this.bpName = bpName;
-		this.entityName = entityName;
-		loot = new ItemStack[0];
-	}
-
-	@LuaCallable
 	public String getBpName() {
 		return bpName;
 	}
 
-	@LuaCallable
 	public void setBpName(String bpName) {
 		this.bpName = bpName;
 	}
 
-	@LuaCallable
 	public String getEntityName() {
 		return entityName;
 	}
 
-	@LuaCallable
 	public void setEntityName(String entityName) {
 		this.entityName = entityName;
 	}
 
-	@LuaCallable
-	public ItemStack[] getLoot() {
+	public LuaTable getLoot() {
 		return loot;
 	}
 
-	@LuaCallable
-	public void setLoot(ItemStack[] loot) {
+	public void setLoot(LuaTable loot) {
 		this.loot = loot;
 	}
 }

@@ -20,6 +20,7 @@ import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirec
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.data.generation.GenerationScriptLoader;
 import thederpgamer.lorefulloot.lua.data.entity.EntityGenData;
+import thederpgamer.lorefulloot.lua.data.item.ItemStack;
 import thederpgamer.lorefulloot.utils.DataUtils;
 import thederpgamer.lorefulloot.utils.MiscUtils;
 
@@ -74,39 +75,39 @@ public class GenerationManager {
 		}*/
 	}
 
-	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, boolean force) {
+	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType) {
 		try {
-			for(LuaValue value : GenerationScriptLoader.getAllScripts()) {
-				if(value.isstring()) {
-					String scriptName = value.toString();
-					LorefulLoot.getInstance().logInfo("Executing generation script: " + scriptName);
-					LuaTable args = new LuaTable();
-					args.set("sector_pos", LuaValue.valueOf(sector.pos.toString()));
-					args.set("sector_type", LuaValue.valueOf(sectorType.name()));
-					args.set("forced", LuaValue.valueOf(force));
-					LuaValue script = GenerationScriptLoader.loadScript(scriptName, args);
-					if(script != null) {
-						if(script.isfunction()) {
-							LuaValue result = script.call();
-							if(result.istable()) {
-								LuaTable entities = result.checktable();
-								for(int i = 1; i <= entities.length(); i++) {
-									EntityGenData entityData = (EntityGenData) entities.get(i).checkuserdata(EntityGenData.class);
-									if(entityData != null) {
-										createEntity(entityData, sector);
-									} else {
-										LorefulLoot.getInstance().logWarning("Entity data is null for index: " + i + " in script: " + scriptName);
-									}
+			for(String scriptName : GenerationScriptLoader.getAllScripts()) {
+				LorefulLoot.getInstance().logInfo("Executing generation script: " + scriptName);
+				LuaTable args = new LuaTable();
+				args.set("sector_pos", LuaValue.valueOf(sector.pos.toString()));
+				args.set("sector_type", LuaValue.valueOf(sectorType.name()));
+				LuaValue script = GenerationScriptLoader.loadScript(scriptName, args);
+				if(script != null) {
+					if(script.isfunction()) {
+						LuaValue result = script.call();
+						if(result.istable()) {
+							LuaTable entities = result.checktable();
+							if(entities.length() == 0) {
+								LorefulLoot.getInstance().logInfo("Script returned an empty table of entities to spawn: " + scriptName);
+								continue;
+							}
+							for(int i = 1; i <= entities.length(); i++) {
+								EntityGenData entityData = (EntityGenData) entities.get(i).checkuserdata(EntityGenData.class);
+								if(entityData != null) {
+									createEntity(entityData, sector);
+								} else {
+									LorefulLoot.getInstance().logWarning("Entity data is null for index: " + i + " in script: " + scriptName);
 								}
-							} else {
-								LorefulLoot.getInstance().logWarning("Script did not return a table of entities to spawn: " + scriptName);
 							}
 						} else {
-							LorefulLoot.getInstance().logWarning("Script did not return a function: " + scriptName);
+							LorefulLoot.getInstance().logWarning("Script did not return a table of entities to spawn: " + scriptName);
 						}
 					} else {
-						LorefulLoot.getInstance().logWarning("Failed to load generation script: " + scriptName);
+						LorefulLoot.getInstance().logWarning("Script did not return a function: " + scriptName);
 					}
+				} else {
+					LorefulLoot.getInstance().logWarning("Failed to load generation script: " + scriptName);
 				}
 			}
 		} catch(Exception exception) {
@@ -114,10 +115,10 @@ public class GenerationManager {
 		}
 	}
 
-	private static void createEntity(final EntityGenData config, Sector sector) {
+	private static void createEntity(final EntityGenData config, final Sector sector) {
 		SegmentControllerOutline<?> scOutline = null;
 		try {
-			scOutline = BluePrintController.active.loadBluePrint(GameServerState.instance, config.getBpName(), config.getEntityName(), getRandomTransformInSector(), -1, 0, sector.pos, "LorefulLoot", PlayerState.buffer, null, false, new ChildStats(false));
+			scOutline = BluePrintController.active.loadBluePrint(GameServerState.instance, config.getBpName(),  "[Wreckage] " + config.getEntityName() + "_" + System.currentTimeMillis(), getRandomTransformInSector(), -1, 0, sector.pos, "LorefulLoot", PlayerState.buffer, null, false, new ChildStats(false));
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to create entity for sector " + sector.pos + "!", exception);
 		}
@@ -134,10 +135,27 @@ public class GenerationManager {
 					@Override
 					public void run() {
 						try {
-							sleep(1000);
 							controller.getSegmentBuffer().restructBB();
-							MiscUtils.fillInventories((Ship) controller, config.getLoot());
-							MiscUtils.wreckShip((Ship) controller);
+							sleep(5000);
+							if(!controller.isFullyLoadedWithDock()) {
+								return;
+							}
+							LuaTable lootTable = config.getLoot();
+							if(lootTable == null || lootTable.length() == 0) {
+								LorefulLoot.getInstance().logWarning("No loot defined for entity: " + config.getBpName() + " in sector: " + sector.pos);
+								return;
+							}
+							ItemStack[] lootArray = new ItemStack[lootTable.length()];
+							for(int i = 1; i <= lootTable.length(); i++) {
+								LuaValue itemData = lootTable.get(i);
+								if(itemData.isuserdata(ItemStack.class)) {
+									ItemStack itemStack = (ItemStack) itemData.checkuserdata(ItemStack.class);
+									lootArray[i - 1] = itemStack;
+								} else {
+									LorefulLoot.getInstance().logWarning("Invalid item data at index " + i + " for entity: " + config.getBpName() + " in sector: " + sector.pos);
+								}
+							}
+							MiscUtils.wreckShip((Ship) controller, lootArray);
 						} catch(Exception exception) {
 							exception.printStackTrace();
 						}
@@ -179,8 +197,8 @@ public class GenerationManager {
 			if(entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()) > 15000) {
 				overheatMap.put(entity, entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()));
 			} else {
-				if(!entity.getRealName().contains("[Wreckage]")) {
-					entity.setRealName(entity.getRealName() + " [Wreckage]");
+				if(!entity.getRealName().startsWith("[Wreckage] ")) {
+					entity.setRealName("[Wreckage] " + entity.getRealName() + "_" + System.currentTimeMillis());
 					entity.setFactionId(0);
 					entity.setScrap(false);
 					entity.setMinable(true);

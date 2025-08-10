@@ -4,7 +4,7 @@
 		{
 			"name": "Survey Woes",
 			"header": "Captain's Log [10.5.3122]:",
-			"content": "We have once again been notified of an attempt to terminate our ongoing survey mission. However, as usual we have managed to convince the upper brass to allow it to continue. Our scans continue to show incorrect data, as if this sector is from another galaxy entirely. Something dramatic clearly happened here...\nNoting some strange \"tear marks\" and \"dents\" across the surface, our chief engineer hypothesized that something was desperately trying to get into it... or perhaps get out of it.",
+			"content": "We have once again been notified of an attempt to terminate our ongoing survey mission. However, as usual we have managed to convince the upper brass to allow it to continue. Our scans continue to show incorrect data, as if this sector is from another galaxy entirely. Something dramatic clearly happened here...",
 			"type": "LOG",
 			"weight": 0.2,
 			"conditions": []
@@ -12,7 +12,7 @@
 		{
 			"name": "Mysterious Anomaly",
 			"header": "Captain's Log [10.17.3122]:",
-			"content": "We encountered another strange anomaly today. It appears to be a small capsule, the size of a child. Yet it's radar signature would indicate that of a colossal battleship, gigantic in size.\nEither case, we opened it easily, but found nothing. Strangely enough, the massive radar signature we had detected earlier disappeared after we opened it.",
+			"content": "We encountered another strange anomaly today. It appears to be a small capsule, the size of a child. Yet it's radar signature would indicate that of a colossal battleship, gigantic in size.\nEither case, we opened it easily, but found nothing.\nNoting some strange \"tear marks\" and \"dents\" across the surface, our chief engineer hypothesized that something was desperately trying to get into it... or perhaps get out of it.\nStrangely enough, the massive radar signature we had detected earlier disappeared after we opened it.",
 			"type": "LOG",
 			"weight": 0.15,
 			"conditions": []

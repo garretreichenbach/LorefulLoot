@@ -1,23 +1,19 @@
 package thederpgamer.lorefulloot.manager;
 
 import api.listener.Listener;
+import api.listener.events.block.SegmentPieceSalvageCheckEvent;
 import api.listener.events.entity.SegmentControllerOverheatEvent;
 import api.listener.events.world.sector.SectorGenerateEvent;
 import api.mod.StarLoader;
 import thederpgamer.lorefulloot.LorefulLoot;
 
-/**
- * [Description]
- *
- * @author TheDerpGamer (MrGoose#0027)
- */
 public class EventManager {
 
 	public static void initialize(LorefulLoot instance) {
 		StarLoader.registerListener(SectorGenerateEvent.class, new Listener<SectorGenerateEvent>() {
 			@Override
 			public void onEvent(SectorGenerateEvent event) {
-				GenerationManager.generateForSector(event.getSector(), event.getType(), false);
+				GenerationManager.generateForSector(event.getSector(), event.getType());
 			}
 		}, instance);
 
@@ -33,6 +29,16 @@ public class EventManager {
 				}
 			}
 		}, instance);
+
+		StarLoader.registerListener(SegmentPieceSalvageCheckEvent.class, new Listener<SegmentPieceSalvageCheckEvent>() {
+			@Override
+			public void onEvent(SegmentPieceSalvageCheckEvent event) {
+				if(event.getController().getRealName().startsWith("[Wreckage] ")) {
+					event.setCanSalvage(true);
+				}
+			}
+		}, instance);
+
 		LorefulLoot.getInstance().logInfo("Initialized Events");
 	}
 }

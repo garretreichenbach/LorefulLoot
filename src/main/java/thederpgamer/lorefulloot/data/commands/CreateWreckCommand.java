@@ -6,7 +6,6 @@ import api.utils.game.chat.CommandInterface;
 import org.schema.game.common.controller.Ship;
 import org.schema.game.common.data.player.PlayerState;
 import thederpgamer.lorefulloot.LorefulLoot;
-import thederpgamer.lorefulloot.utils.MiscUtils;
 
 import javax.annotation.Nullable;
 
@@ -45,7 +44,7 @@ public class CreateWreckCommand implements CommandInterface {
 			return true;
 		}
 		try {
-			MiscUtils.wreckShip((Ship) PlayerUtils.getCurrentControl(sender));
+//			MiscUtils.wreckShip((Ship) PlayerUtils.getCurrentControl(sender), new ItemStack[0]);
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to create wreck!", exception);
 			PlayerUtils.sendMessage(sender, "Failed to create wreck! Check the server logs for more information.");
