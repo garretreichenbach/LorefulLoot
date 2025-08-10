@@ -55,7 +55,7 @@ public class MiscUtils {
 					}
 
 					//If the core got destroyed, delete the ship.
-                    if(!entity.checkCore(entity.getSegmentBuffer().getPointUnsave(Ship.core)) || entity.getMass() <= 1000) {
+                    if(!entity.checkCore(entity.getSegmentBuffer().getPointUnsave(Ship.core))) {
 						entity.setMarkedForDeletePermanentIncludingDocks(true);
 						entity.setMarkedForDeleteVolatileIncludingDocks(true);
                     } else {

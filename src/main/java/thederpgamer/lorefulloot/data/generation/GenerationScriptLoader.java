@@ -13,9 +13,11 @@ import thederpgamer.lorefulloot.lua.data.entity.EntityGenData;
 import thederpgamer.lorefulloot.lua.data.item.ItemStack;
 import thederpgamer.lorefulloot.lua.data.item.meta.LogBook;
 import thederpgamer.lorefulloot.lua.data.item.meta.MetaItem;
+import thederpgamer.lorefulloot.lua.data.misc.LuaVector4f;
 import thederpgamer.lorefulloot.manager.ConfigManager;
 import thederpgamer.lorefulloot.utils.DataUtils;
 
+import javax.vecmath.Vector4f;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -38,6 +40,7 @@ public class GenerationScriptLoader {
 			add(MetaItem.class);
 			add(LogBook.class);
 			add(EntityGenData.class);
+			add(LuaVector4f.class);
 		}
 	};
 
@@ -152,13 +155,14 @@ public class GenerationScriptLoader {
 	 * @param script The Lua script to load and execute.
 	 * @return The result of the script execution.
 	 */
-	public static LuaValue loadScript(String script, Vector3i sectorPos, SectorInformation.SectorType type, boolean forced) throws IOException {
+	public static LuaValue loadScript(String script, Vector3i sectorPos, SectorInformation.SectorType type, Vector4f starColor, boolean forced) throws IOException {
 		// Reset globals to ensure latest class registrations
 		Globals globals = initializeLuaEnvironment();
 		LuaTable argsTable = new LuaTable();
 		argsTable.set("sectorPos", LuaValue.valueOf(sectorPos.toStringPure()));
 		argsTable.set("sectorType", LuaValue.valueOf(type.name()));
 		argsTable.set("forced", LuaValue.valueOf(forced));
+		argsTable.set("starColor", new LuaVector4f(starColor.x, starColor.y, starColor.z, starColor.w));
 		String rawScript = Files.toString(new File(DataUtils.getWorldDataPath() + "/scripts/" + script + ".lua"), StandardCharsets.UTF_8);
 		return globals.load(rawScript);
 	}

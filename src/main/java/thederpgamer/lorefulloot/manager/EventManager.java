@@ -5,7 +5,10 @@ import api.listener.events.block.SegmentPieceSalvageCheckEvent;
 import api.listener.events.entity.SegmentControllerOverheatEvent;
 import api.listener.events.world.sector.SectorGenerateEvent;
 import api.mod.StarLoader;
+import org.schema.game.server.data.Galaxy;
 import thederpgamer.lorefulloot.LorefulLoot;
+
+import javax.vecmath.Vector4f;
 
 public class EventManager {
 
@@ -13,7 +16,14 @@ public class EventManager {
 		StarLoader.registerListener(SectorGenerateEvent.class, new Listener<SectorGenerateEvent>() {
 			@Override
 			public void onEvent(SectorGenerateEvent event) {
-				GenerationManager.generateForSector(event.getSector(), event.getType(), true);
+				Galaxy galaxy = event.getSector().getState().getUniverse().getGalaxyFromSystemPos(event.getSystem().getPos());
+				if(galaxy == null) {
+					LorefulLoot.getInstance().logWarning("Galaxy not found for sector generation event!");
+					return;
+				}
+				Vector4f starColor = galaxy.getSunColor(event.getSystem().getPos());
+				event.getSystem().getTemperature()
+				GenerationManager.generateForSector(event.getSector(), event.getType(), starColor, true);
 			}
 		}, instance);
 

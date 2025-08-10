@@ -5,6 +5,7 @@ import com.bulletphysics.linearmath.Transform;
 import org.apache.commons.io.FileUtils;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
+import org.schema.common.util.linAlg.Vector3i;
 import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
 import org.schema.game.common.controller.Ship;
@@ -25,6 +26,7 @@ import thederpgamer.lorefulloot.utils.DataUtils;
 import thederpgamer.lorefulloot.utils.MiscUtils;
 
 import javax.vecmath.Vector3f;
+import javax.vecmath.Vector4f;
 import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -75,11 +77,11 @@ public class GenerationManager {
 		}*/
 	}
 
-	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, boolean forced) {
+	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, Vector4f starColor, boolean forced) {
 		try {
 			for(String scriptName : GenerationScriptLoader.getAllScripts()) {
 				LorefulLoot.getInstance().logInfo("Executing generation script: " + scriptName);
-				LuaValue script = GenerationScriptLoader.loadScript(scriptName, sector.pos, sectorType, forced);
+				LuaValue script = GenerationScriptLoader.loadScript(scriptName, sector.pos, sectorType, starColor, forced);
 				if(script != null) {
 					if(script.isfunction()) {
 						LuaValue result = script.call();
