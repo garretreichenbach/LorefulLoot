@@ -1,6 +1,5 @@
 package thederpgamer.lorefulloot.utils;
 
-import api.utils.game.inventory.ItemStack;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.schema.common.util.linAlg.Vector3b;
 import org.schema.common.util.linAlg.Vector3i;
@@ -12,6 +11,7 @@ import org.schema.game.common.controller.rails.RailRelation;
 import org.schema.game.common.data.ManagedSegmentController;
 import org.schema.game.common.data.world.Segment;
 import thederpgamer.lorefulloot.LorefulLoot;
+import thederpgamer.lorefulloot.lua.data.item.ItemStack;
 
 import javax.vecmath.Vector3f;
 
@@ -25,7 +25,7 @@ public class MiscUtils {
 	 * Wrecks an entity based off a damage intensity.
 	 *
 	 * @param entity Entity to wreck.
-	 *               <p>Note: Make sure you save a copy of your ship before using this function!</p>
+	 * <p>Note: Make sure you save a copy of your ship before using this function!</p>
 	 */
 	public static void wreckShip(final Ship entity) {
 		(new Thread() {
@@ -49,6 +49,8 @@ public class MiscUtils {
                     if(!entity.checkCore(entity.getSegmentBuffer().getPointUnsave(Ship.core))) {
 						entity.setMarkedForDeletePermanentIncludingDocks(true);
 						entity.setMarkedForDeleteVolatileIncludingDocks(true);
+                    } else {
+						entity.setMinable(true);
                     }
                 } catch(Exception exception) {
 					LorefulLoot.getInstance().logException("Failed to wreck ship: " + entity.getName(), exception);
@@ -90,7 +92,7 @@ public class MiscUtils {
 		InventoryMap map = controller.getInventories();
 		for(int i = 0; i < map.inventoriesList.size(); i++) {
 			for(ItemStack itemStack : itemStacks) {
-				map.inventoriesList.get(i).putNextFreeSlot(itemStack.getId(), itemStack.getAmount(), -1);
+				map.inventoriesList.get(i).putNextFreeSlot(itemStack.getId(), itemStack.getCount(), -1);
 			}
 			map.inventoriesList.get(i).sendAll();
 		}

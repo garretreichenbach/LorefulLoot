@@ -9,8 +9,8 @@ import org.luaj.vm2.lib.StringLib;
 import org.luaj.vm2.lib.TableLib;
 import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JseMathLib;
-import thederpgamer.lorefulloot.data.lua.item.ItemStack;
-import thederpgamer.lorefulloot.data.lua.item.LootTable;
+import thederpgamer.lorefulloot.lua.data.item.ItemStack;
+import thederpgamer.lorefulloot.lua.data.item.LootTable;
 import thederpgamer.lorefulloot.manager.ConfigManager;
 import thederpgamer.lorefulloot.utils.DataUtils;
 
@@ -135,8 +135,9 @@ public class GenerationScriptLoader {
 	 * @param script The Lua script to load and execute.
 	 * @return The result of the script execution.
 	 */
-	public static LuaValue loadScript(String script) throws IOException {
+	public static LuaValue loadScript(String script, LuaTable args) throws IOException {
 		Globals globals = initializeLuaEnvironment();
+		globals.set("args", args);
 		String rawScript = Files.toString(new File(DataUtils.getResourcesPath() + "/scripts/" + script + ".lua"), StandardCharsets.UTF_8);
 		LuaValue chunk = globals.load(rawScript);
 		if(chunk.isfunction()) return chunk.call();

@@ -32,7 +32,6 @@ public class DataUtils {
 					file.getParentFile().mkdirs();
 					FileUtils.copyInputStreamToFile(zipInputStream, file);
 				}
-				zipInputStream.closeEntry();
 			}
 			zipInputStream.close();
 		} catch(Exception exception) {
@@ -51,7 +50,6 @@ public class DataUtils {
 					file.getParentFile().mkdirs();
 					FileUtils.copyInputStreamToFile(zipInputStream, file);
 				}
-				zipInputStream.closeEntry();
 			}
 			zipInputStream.close();
 		} catch(Exception exception) {

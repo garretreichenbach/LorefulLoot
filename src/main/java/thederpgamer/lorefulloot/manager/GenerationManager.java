@@ -2,16 +2,26 @@ package thederpgamer.lorefulloot.manager;
 
 import api.listener.events.entity.SegmentControllerOverheatEvent;
 import com.bulletphysics.linearmath.Transform;
+import org.apache.commons.io.FileUtils;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
+import org.schema.game.common.controller.Ship;
+import org.schema.game.common.data.player.PlayerState;
 import org.schema.game.common.data.world.Sector;
 import org.schema.game.common.data.world.SectorInformation;
+import org.schema.game.server.controller.BluePrintController;
+import org.schema.game.server.data.GameServerState;
 import org.schema.game.server.data.ServerConfig;
+import org.schema.game.server.data.blueprint.ChildStats;
+import org.schema.game.server.data.blueprint.SegmentControllerOutline;
+import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirect;
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.data.generation.GenerationScriptLoader;
+import thederpgamer.lorefulloot.lua.data.entity.EntityGenData;
 import thederpgamer.lorefulloot.utils.DataUtils;
+import thederpgamer.lorefulloot.utils.MiscUtils;
 
 import javax.vecmath.Vector3f;
 import java.io.File;
@@ -34,34 +44,34 @@ public class GenerationManager {
 		if(!scriptsFolder.exists() || scriptsFolder.listFiles() == null || Objects.requireNonNull(scriptsFolder.listFiles()).length == 0) {
 			scriptsFolder.mkdirs();
 			try {
-				InputStream inputStream = GenerationManager.class.getResourceAsStream("default_scripts.zip");
+				InputStream inputStream = LorefulLoot.getInstance().getJarResource("test_script.lua");
 				if(inputStream != null) {
-					File defaultGenerationFile = new File(scriptsFolder, "default_scripts.zip");
-					DataUtils.unzip(inputStream, scriptsFolder);
-					LorefulLoot.getInstance().logInfo("Default generation scripts copied to: " + defaultGenerationFile.getAbsolutePath());
+					File scriptFile = new File(scriptsFolder, "test_script.lua");
+					FileUtils.copyInputStreamToFile(inputStream, scriptFile);
+					inputStream.close();
 				} else {
-					LorefulLoot.getInstance().logWarning("Default generation scripts resource not found!");
+					LorefulLoot.getInstance().logWarning("Default generation script not found!");
 				}
 			} catch(Exception exception) {
-				LorefulLoot.getInstance().logException("Failed to copy default generation script!", exception);
+				LorefulLoot.getInstance().logException("Failed to copy default generation scripts!", exception);
 			}
 		}
-		//Load default blueprints
+	/*	//Load default blueprints
 		File blueprintsFolder = new File(DataUtils.getWorldDataPath(), "blueprints");
 		if(!blueprintsFolder.exists() || blueprintsFolder.listFiles() == null || Objects.requireNonNull(blueprintsFolder.listFiles()).length == 0) {
 			blueprintsFolder.mkdirs();
 			try {
-				InputStream inputStream = GenerationManager.class.getResourceAsStream("default_blueprints.zip");
+				InputStream inputStream = LorefulLoot.getInstance().getJarResource("default_blueprints.zip");
 				if(inputStream != null) {
 					DataUtils.unzip(inputStream, blueprintsFolder);
 					LorefulLoot.getInstance().logInfo("Default blueprints copied to: " + blueprintsFolder.getAbsolutePath());
 				} else {
-					LorefulLoot.getInstance().logWarning("Default blueprints resource not found!");
+					LorefulLoot.getInstance().logWarning("Default blueprints not found!");
 				}
 			} catch(Exception exception) {
 				LorefulLoot.getInstance().logException("Failed to copy default blueprint!", exception);
 			}
-		}
+		}*/
 	}
 
 	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, boolean force) {
@@ -70,13 +80,30 @@ public class GenerationManager {
 				if(value.isstring()) {
 					String scriptName = value.toString();
 					LorefulLoot.getInstance().logInfo("Executing generation script: " + scriptName);
-					LuaValue script = GenerationScriptLoader.loadScript(scriptName);
+					LuaTable args = new LuaTable();
+					args.set("sector_pos", LuaValue.valueOf(sector.pos.toString()));
+					args.set("sector_type", LuaValue.valueOf(sectorType.name()));
+					args.set("forced", LuaValue.valueOf(force));
+					LuaValue script = GenerationScriptLoader.loadScript(scriptName, args);
 					if(script != null) {
-						LuaTable args = new LuaTable();
-						args.set("sector_pos", LuaValue.valueOf(sector.pos.toString()));
-						args.set("sector_type", LuaValue.valueOf(sectorType.name()));
-						args.set("forced", LuaValue.valueOf(force));
-						script.call(args);
+						if(script.isfunction()) {
+							LuaValue result = script.call();
+							if(result.istable()) {
+								LuaTable entities = result.checktable();
+								for(int i = 1; i <= entities.length(); i++) {
+									EntityGenData entityData = (EntityGenData) entities.get(i).checkuserdata(EntityGenData.class);
+									if(entityData != null) {
+										createEntity(entityData, sector);
+									} else {
+										LorefulLoot.getInstance().logWarning("Entity data is null for index: " + i + " in script: " + scriptName);
+									}
+								}
+							} else {
+								LorefulLoot.getInstance().logWarning("Script did not return a table of entities to spawn: " + scriptName);
+							}
+						} else {
+							LorefulLoot.getInstance().logWarning("Script did not return a function: " + scriptName);
+						}
 					} else {
 						LorefulLoot.getInstance().logWarning("Failed to load generation script: " + scriptName);
 					}
@@ -87,10 +114,10 @@ public class GenerationManager {
 		}
 	}
 
-	/*private static void createEntity(final GenerationConfigOld config, Sector sector) {
+	private static void createEntity(final EntityGenData config, Sector sector) {
 		SegmentControllerOutline<?> scOutline = null;
 		try {
-			scOutline = BluePrintController.active.loadBluePrint(GameServerState.instance, config.getName(), config.genName(), getRandomTransformInSector(), -1, 0, sector.pos, "LorefulLoot", PlayerState.buffer, null, false, new ChildStats(false));
+			scOutline = BluePrintController.active.loadBluePrint(GameServerState.instance, config.getBpName(), config.getEntityName(), getRandomTransformInSector(), -1, 0, sector.pos, "LorefulLoot", PlayerState.buffer, null, false, new ChildStats(false));
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to create entity for sector " + sector.pos + "!", exception);
 		}
@@ -103,24 +130,24 @@ public class GenerationManager {
 
 					}
 				});
-				new Thread() {
+				(new Thread() {
 					@Override
 					public void run() {
 						try {
 							sleep(1000);
 							controller.getSegmentBuffer().restructBB();
-							MiscUtils.fillInventories((Ship) controller, config.genItemStacks());
+							MiscUtils.fillInventories((Ship) controller, config.getLoot());
 							MiscUtils.wreckShip((Ship) controller);
 						} catch(Exception exception) {
 							exception.printStackTrace();
 						}
 					}
-				}.start();
+				}).start();
 			} catch(Exception exception) {
 				LorefulLoot.getInstance().logException("Failed to spawn entity for sector " + sector.pos + "!", exception);
 			}
 		}
-	}*/
+	}
 
 	private static Transform getRandomTransformInSector() {
 		//Gen Random Position
