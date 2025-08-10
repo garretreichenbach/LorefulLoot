@@ -75,11 +75,11 @@ public class GenerationManager {
 		}*/
 	}
 
-	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType) {
+	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, boolean forced) {
 		try {
 			for(String scriptName : GenerationScriptLoader.getAllScripts()) {
 				LorefulLoot.getInstance().logInfo("Executing generation script: " + scriptName);
-				LuaValue script = GenerationScriptLoader.loadScript(scriptName, sector.pos, sectorType);
+				LuaValue script = GenerationScriptLoader.loadScript(scriptName, sector.pos, sectorType, forced);
 				if(script != null) {
 					if(script.isfunction()) {
 						LuaValue result = script.call();

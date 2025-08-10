@@ -13,7 +13,7 @@ public class EventManager {
 		StarLoader.registerListener(SectorGenerateEvent.class, new Listener<SectorGenerateEvent>() {
 			@Override
 			public void onEvent(SectorGenerateEvent event) {
-				GenerationManager.generateForSector(event.getSector(), event.getType());
+				GenerationManager.generateForSector(event.getSector(), event.getType(), true);
 			}
 		}, instance);
 

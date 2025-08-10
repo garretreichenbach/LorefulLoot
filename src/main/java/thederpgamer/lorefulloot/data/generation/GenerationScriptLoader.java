@@ -152,19 +152,15 @@ public class GenerationScriptLoader {
 	 * @param script The Lua script to load and execute.
 	 * @return The result of the script execution.
 	 */
-	public static LuaValue loadScript(String script, Vector3i sectorPos, SectorInformation.SectorType type) throws IOException {
+	public static LuaValue loadScript(String script, Vector3i sectorPos, SectorInformation.SectorType type, boolean forced) throws IOException {
 		// Reset globals to ensure latest class registrations
 		Globals globals = initializeLuaEnvironment();
 		LuaTable argsTable = new LuaTable();
 		argsTable.set("sectorPos", LuaValue.valueOf(sectorPos.toStringPure()));
 		argsTable.set("sectorType", LuaValue.valueOf(type.name()));
+		argsTable.set("forced", LuaValue.valueOf(forced));
 		String rawScript = Files.toString(new File(DataUtils.getWorldDataPath() + "/scripts/" + script + ".lua"), StandardCharsets.UTF_8);
-		LuaValue chunk = globals.load(rawScript);
-		if(chunk.isfunction()) {
-			return chunk.call(argsTable);
-		} else {
-			return chunk;
-		}
+		return globals.load(rawScript);
 	}
 
 	public static ArrayList<String> getAllScripts() {

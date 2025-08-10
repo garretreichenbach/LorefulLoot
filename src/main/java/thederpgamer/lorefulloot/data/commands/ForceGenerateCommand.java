@@ -42,7 +42,7 @@ public class ForceGenerateCommand implements CommandInterface {
 	public boolean onCommand(PlayerState playerState, String[] strings) {
 		try {
 			Sector sector = GameServer.getUniverse().getSector(playerState.getCurrentSectorId());
-			GenerationManager.generateForSector(sector, sector.getSectorType());
+			GenerationManager.generateForSector(sector, sector.getSectorType(), true);
 		} catch(Exception exception) {
 			exception.printStackTrace();
 		}

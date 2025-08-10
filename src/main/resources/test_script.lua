@@ -1,6 +1,7 @@
 return function(args)
     local sectorPos = args[1]
     local sectorType = args[2]
+    local forced = args[3] or false
 
     local lootTable = {
         ItemStack:new("ship_core", 1),
@@ -8,7 +9,7 @@ return function(args)
     }
 
     local entityGenTable = {}
-    if math.random() < 0.3 then
+    if math.random() < 0.05 or forced then
         entityGenTable[1] = EntityGenData:new("test_ship", "test_ship", lootTable)
     end
     return entityGenTable
