@@ -95,34 +95,29 @@ public class GenerationManager {
 					continue;
 				}
 				LorefulLoot.getInstance().logInfo("Executing script: " + scriptName);
-
 				LuaTable args = new LuaTable();
 				args.set("sector", new LuaVector3f(sector.pos.x, sector.pos.y, sector.pos.z));
 				args.set("sectorType", LuaValue.valueOf(sectorType.name()));
 				args.set("starColor", new LuaVector4f(starColor.x, starColor.y, starColor.z, starColor.w));
 				args.set("forced", LuaValue.valueOf(forced));
-				script.call(args);
-
-				/*if(script.isfunction()) {
-					LuaValue result = script.call();
-					if(result.istable()) {
-						LuaTable entities = result.checktable();
-						if(entities.length() == 0) {
-							LorefulLoot.getInstance().logInfo("Script returned an empty table of entities to spawn: " + scriptName);
-							continue;
-						}
-						for(int i = 1; i <= entities.length(); i++) {
-							EntityGenData entityData = (EntityGenData) entities.get(i).checkuserdata(EntityGenData.class);
-							if(entityData != null) {
-								createEntity(entityData, sector);
-							} else {
-								LorefulLoot.getInstance().logWarning("Entity data is null for index: " + i + " in script: " + scriptName);
-							}
-						}
-					} else {
-						LorefulLoot.getInstance().logWarning("Script did not return a table of entities to spawn: " + scriptName);
+				LuaValue result = script.call(args);
+				if(result.istable()) {
+					LuaTable entities = result.checktable();
+					if(entities.length() == 0) {
+						LorefulLoot.getInstance().logInfo("Script returned an empty table of entities to spawn: " + scriptName);
+						continue;
 					}
-				}*/
+					for(int i = 1; i <= entities.length(); i++) {
+						EntityGenData entityData = (EntityGenData) entities.get(i).checkuserdata(EntityGenData.class);
+						if(entityData != null) {
+							createEntity(entityData, sector);
+						} else {
+							LorefulLoot.getInstance().logWarning("Entity data is null for index: " + i + " in script: " + scriptName);
+						}
+					}
+				} else {
+					LorefulLoot.getInstance().logWarning("Script did not return a table of entities to spawn: " + scriptName);
+				}
 			}
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to generate entities for sector " + sector.pos + "!", exception);
@@ -212,10 +207,8 @@ public class GenerationManager {
 				overheatMap.put(entity, entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()));
 			} else {
 				if(!entity.getRealName().startsWith("[Wreckage] ")) {
-					entity.setRealName("[Wreckage] " + entity.getRealName() + "_" + System.currentTimeMillis());
+					entity.setRealName("[Wreckage] " + entity.getRealName());
 					entity.setFactionId(0);
-					entity.setScrap(false);
-					entity.setMinable(true);
 					entity.setMarkedForDeletePermanentIncludingDocks(false);
 					entity.setMarkedForDeleteVolatileIncludingDocks(false);
 					entity.stopCoreOverheating();
