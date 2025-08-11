@@ -6,23 +6,22 @@ import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.*;
 import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JseMathLib;
-import org.schema.common.util.linAlg.Vector3i;
-import org.schema.game.common.data.world.SectorInformation;
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.lua.data.entity.EntityGenData;
 import thederpgamer.lorefulloot.lua.data.item.ItemStack;
 import thederpgamer.lorefulloot.lua.data.item.meta.LogBook;
 import thederpgamer.lorefulloot.lua.data.item.meta.MetaItem;
+import thederpgamer.lorefulloot.lua.data.misc.LuaVector3f;
 import thederpgamer.lorefulloot.lua.data.misc.LuaVector4f;
+import thederpgamer.lorefulloot.lua.utils.ItemUtils;
 import thederpgamer.lorefulloot.manager.ConfigManager;
 import thederpgamer.lorefulloot.utils.DataUtils;
 
-import javax.vecmath.Vector4f;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 
 /**
@@ -38,9 +37,33 @@ public class GenerationScriptLoader {
 			add(MetaItem.class);
 			add(LogBook.class);
 			add(EntityGenData.class);
+			add(LuaVector3f.class);
 			add(LuaVector4f.class);
+			add(ItemUtils.class);
 		}
 	};
+
+	private static final HashMap<String, LuaValue> generationScripts = new HashMap<>();
+	private static final HashMap<String, LuaValue> utilityScripts = new HashMap<>();
+
+	public static void initialize() {
+		File scriptsDir = new File(DataUtils.getWorldDataPath(), "scripts");
+		if(scriptsDir.exists()) {
+			for(File file : Objects.requireNonNull(scriptsDir.listFiles())) {
+				if(file.isFile() && file.getName().endsWith(".lua")) {
+					try {
+						loadScript(file);
+					} catch(IOException e) {
+						LorefulLoot.getInstance().logException("Failed to load script: " + file.getName(), e);
+					}
+				}
+			}
+		}
+	}
+
+	public static LuaValue getGenerationScript(String name) {
+		return generationScripts.get(name);
+	}
 
 	/**
 	 * Initializes the Lua environment with the necessary libraries and settings.
@@ -56,6 +79,13 @@ public class GenerationScriptLoader {
 		globals.load(new JseMathLib());
 		globals.load(new Bit32Lib());
 		LuaC.install(globals);
+
+		/*LuaTable packageTable = (LuaTable) globals.get("package");
+		String currentPath = packageTable.get("path").tojstring();
+		String newPath = Objects.requireNonNull(DataUtils.getWorldDataPath()).replace("\\", "/") + "/?.lua;" + DataUtils.getWorldDataPath().replace("\\", "/") + "/?/init.lua;" + currentPath;
+		packageTable.set("path", LuaValue.valueOf(newPath));
+		globals.set("package", packageTable);*/
+
 		LuaString.s_metatable = new ReadOnlyLuaTable(LuaString.s_metatable);
 		if(ConfigManager.getMainConfig().getBoolean("restrict-lua-libs")) {
 			ArrayList<String> whitelistedLibs = ConfigManager.getMainConfig().getList("whitelisted-lua-libs");
@@ -147,39 +177,20 @@ public class GenerationScriptLoader {
 		return globals;
 	}
 
-	/**
-	 * Loads and executes a Lua script.
-	 *
-	 * @param script The Lua script to load and execute.
-	 * @return The result of the script execution.
-	 */
-	public static LuaValue loadScript(String script, Vector3i sectorPos, SectorInformation.SectorType type, Vector4f starColor, boolean forced) throws IOException {
-		// Reset globals to ensure latest class registrations
+	public static void loadScript(File scriptFile) throws IOException {
+		String scriptName = Files.getNameWithoutExtension(scriptFile.getName());
 		Globals globals = initializeLuaEnvironment();
-		LuaTable argsTable = new LuaTable();
-		argsTable.set("sectorPos", LuaValue.valueOf(sectorPos.toStringPure()));
-		argsTable.set("sectorType", LuaValue.valueOf(type.name()));
-		argsTable.set("forced", LuaValue.valueOf(forced));
-		argsTable.set("starColor", new LuaVector4f(starColor.x, starColor.y, starColor.z, starColor.w));
-		String rawScript = Files.toString(new File(DataUtils.getWorldDataPath() + "/scripts/" + script + ".lua"), StandardCharsets.UTF_8);
-		return globals.load(rawScript);
-	}
-
-	public static ArrayList<String> getAllScripts() {
-		ArrayList<String> scripts = new ArrayList<>();
-		File scriptsFolder = new File(DataUtils.getWorldDataPath() + "/scripts");
-		if(!scriptsFolder.exists() || scriptsFolder.listFiles() == null || Objects.requireNonNull(scriptsFolder.listFiles()).length == 0) {
-			LorefulLoot.getInstance().logWarning("No scripts found in: " + scriptsFolder.getAbsolutePath());
-			return scripts;
+		String rawScript = Files.toString(scriptFile, java.nio.charset.StandardCharsets.UTF_8);
+		LuaValue script = globals.load(rawScript);
+		if(script.isnil()) {
+			LorefulLoot.getInstance().logWarning("Script " + scriptName + " is empty or failed to load.");
+			return;
 		}
-		for(File file : Objects.requireNonNull(scriptsFolder.listFiles())) {
-			if(file.isFile() && file.getName().endsWith(".lua")) {
-				String scriptName = file.getName().substring(0, file.getName().length() - 4);
-				LorefulLoot.getInstance().logInfo("Loading script: " + scriptName);
-				scripts.add(scriptName);
-			}
+		if(script.isfunction()) {
+			generationScripts.put(scriptName, script);
+		} else {
+			utilityScripts.put(scriptName, script);
 		}
-		return scripts;
 	}
 
 	private static class ReadOnlyLuaTable extends LuaTable {
