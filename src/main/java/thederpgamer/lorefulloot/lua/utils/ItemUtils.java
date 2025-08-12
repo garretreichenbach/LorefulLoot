@@ -1,16 +1,19 @@
 package thederpgamer.lorefulloot.lua.utils;
 
+import org.luaj.vm2.LuaTable;
 import org.schema.game.common.data.element.ElementCategory;
 import org.schema.game.common.data.element.ElementInformation;
 import org.schema.game.common.data.element.ElementKeyMap;
 import thederpgamer.lorefulloot.lua.LuaData;
+import thederpgamer.lorefulloot.lua.data.LuaCallable;
 import thederpgamer.lorefulloot.lua.data.item.ItemStack;
 
 import java.util.ArrayList;
 
 public class ItemUtils extends LuaData {
 
-	public static ItemStack[] getRandomStacks(int min, int max, String category) {
+	@LuaCallable
+	public static LuaTable getRandomStacks(int min, int max, String category) {
 		ArrayList<ItemStack> stacks = new ArrayList<>();
 		for(ElementInformation info : ElementKeyMap.infoArray) {
 			if(info == null || !ElementKeyMap.isValidType(info.id)) {
@@ -40,6 +43,10 @@ public class ItemUtils extends LuaData {
 			randomStacks[i] = stacks.get(index);
 			stacks.remove(index); // Remove to avoid duplicates
 		}
-		return randomStacks;
+		LuaTable luaTable = new LuaTable();
+		for(int i = 0; i < randomStacks.length; i++) {
+			luaTable.insert(i + 1, randomStacks[i]);
+		}
+		return luaTable;
 	}
 }

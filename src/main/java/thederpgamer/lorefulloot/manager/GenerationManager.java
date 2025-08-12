@@ -2,28 +2,21 @@ package thederpgamer.lorefulloot.manager;
 
 import api.listener.events.entity.SegmentControllerOverheatEvent;
 import com.bulletphysics.linearmath.Transform;
+import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
-import org.schema.game.common.controller.Ship;
-import org.schema.game.common.data.player.PlayerState;
 import org.schema.game.common.data.world.Sector;
 import org.schema.game.common.data.world.SectorInformation;
-import org.schema.game.server.controller.BluePrintController;
-import org.schema.game.server.data.GameServerState;
 import org.schema.game.server.data.ServerConfig;
-import org.schema.game.server.data.blueprint.ChildStats;
-import org.schema.game.server.data.blueprint.SegmentControllerOutline;
-import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirect;
 import thederpgamer.lorefulloot.LorefulLoot;
 import thederpgamer.lorefulloot.data.generation.GenerationScriptLoader;
 import thederpgamer.lorefulloot.lua.data.entity.EntityGenData;
-import thederpgamer.lorefulloot.lua.data.item.ItemStack;
+import thederpgamer.lorefulloot.lua.data.entity.PirateGenData;
 import thederpgamer.lorefulloot.lua.data.misc.LuaVector3f;
 import thederpgamer.lorefulloot.lua.data.misc.LuaVector4f;
 import thederpgamer.lorefulloot.utils.DataUtils;
-import thederpgamer.lorefulloot.utils.MiscUtils;
 
 import javax.vecmath.Vector3f;
 import javax.vecmath.Vector4f;
@@ -74,7 +67,6 @@ public class GenerationManager {
 				LorefulLoot.getInstance().logException("Failed to copy default blueprint!", exception);
 			}
 		}
-		GenerationScriptLoader.initialize();
 	}
 
 	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, Vector4f starColor, boolean forced) {
@@ -89,7 +81,7 @@ public class GenerationManager {
 				String scriptName = scriptFile.getName().substring(0, scriptFile.getName().length() - 4); //Remove .lua extension
 				if(scriptName.isEmpty()) continue; //Skip empty names
 				LorefulLoot.getInstance().logInfo("Loading script: " + scriptName);
-				LuaValue script = GenerationScriptLoader.getGenerationScript(scriptName);
+				LuaValue script = GenerationScriptLoader.loadScript(scriptFile);
 				if(script == null || script.isnil()) {
 					LorefulLoot.getInstance().logWarning("Script " + scriptName + " returned nil or failed to load.");
 					continue;
@@ -101,22 +93,22 @@ public class GenerationManager {
 				args.set("starColor", new LuaVector4f(starColor.x, starColor.y, starColor.z, starColor.w));
 				args.set("forced", LuaValue.valueOf(forced));
 				LuaValue result = script.call(args);
+				if(result.isfunction()) {
+					LuaFunction function = result.checkfunction();
+					result = function.call(args);
+				}
 				if(result.istable()) {
 					LuaTable entities = result.checktable();
-					if(entities.length() == 0) {
-						LorefulLoot.getInstance().logInfo("Script returned an empty table of entities to spawn: " + scriptName);
-						continue;
-					}
 					for(int i = 1; i <= entities.length(); i++) {
-						EntityGenData entityData = (EntityGenData) entities.get(i).checkuserdata(EntityGenData.class);
-						if(entityData != null) {
-							createEntity(entityData, sector);
-						} else {
-							LorefulLoot.getInstance().logWarning("Entity data is null for index: " + i + " in script: " + scriptName);
+						LuaValue entityData = entities.get(i);
+						if(entityData.isuserdata(PirateGenData.class)) {
+							PirateGenData pirateGenData = (PirateGenData) entityData.checkuserdata(PirateGenData.class);
+							pirateGenData.spawnEntity(new LuaVector3f(sector.pos.x, sector.pos.y, sector.pos.z));
+						} else if(entityData.isuserdata(EntityGenData.class)) {
+							EntityGenData entityGenData = (EntityGenData) entityData.checkuserdata(EntityGenData.class);
+							entityGenData.spawnEntity(new LuaVector3f(sector.pos.x, sector.pos.y, sector.pos.z));
 						}
 					}
-				} else {
-					LorefulLoot.getInstance().logWarning("Script did not return a table of entities to spawn: " + scriptName);
 				}
 			}
 		} catch(Exception exception) {
@@ -124,59 +116,7 @@ public class GenerationManager {
 		}
 	}
 
-	private static void createEntity(final EntityGenData config, final Sector sector) {
-		SegmentControllerOutline<?> scOutline = null;
-		try {
-			scOutline = BluePrintController.active.loadBluePrint(GameServerState.instance, config.getBpName(), "[Wreckage] " + config.getEntityName() + "_" + System.currentTimeMillis(), getRandomTransformInSector(), -1, 0, sector.pos, "LorefulLoot", PlayerState.buffer, null, false, new ChildStats(false));
-		} catch(Exception exception) {
-			LorefulLoot.getInstance().logException("Failed to create entity for sector " + sector.pos + "!", exception);
-		}
-
-		if(scOutline != null) {
-			try {
-				final SegmentController controller = scOutline.spawn(sector.pos, false, new ChildStats(false), new SegmentControllerSpawnCallbackDirect(GameServerState.instance, sector.pos) {
-					@Override
-					public void onNoDocker() {
-
-					}
-				});
-				(new Thread() {
-					@Override
-					public void run() {
-						try {
-							controller.getSegmentBuffer().restructBB();
-							sleep(5000);
-							if(!controller.isFullyLoadedWithDock()) {
-								return;
-							}
-							LuaTable lootTable = config.getLoot();
-							if(lootTable == null || lootTable.length() == 0) {
-								LorefulLoot.getInstance().logWarning("No loot defined for entity: " + config.getBpName() + " in sector: " + sector.pos);
-								return;
-							}
-							ItemStack[] lootArray = new ItemStack[lootTable.length()];
-							for(int i = 1; i <= lootTable.length(); i++) {
-								LuaValue itemData = lootTable.get(i);
-								if(itemData.isuserdata(ItemStack.class)) {
-									ItemStack itemStack = (ItemStack) itemData.checkuserdata(ItemStack.class);
-									lootArray[i - 1] = itemStack;
-								} else {
-									LorefulLoot.getInstance().logWarning("Invalid item data at index " + i + " for entity: " + config.getBpName() + " in sector: " + sector.pos);
-								}
-							}
-							MiscUtils.wreckShip((Ship) controller, lootArray);
-						} catch(Exception exception) {
-							exception.printStackTrace();
-						}
-					}
-				}).start();
-			} catch(Exception exception) {
-				LorefulLoot.getInstance().logException("Failed to spawn entity for sector " + sector.pos + "!", exception);
-			}
-		}
-	}
-
-	private static Transform getRandomTransformInSector() {
+	public static Transform getRandomTransformInSector() {
 		//Gen Random Position
 		int sectorSize = (Integer) ServerConfig.SECTOR_SIZE.getCurrentState();
 		int x = (int) (Math.random() * sectorSize);

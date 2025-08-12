@@ -2,6 +2,7 @@ package thederpgamer.lorefulloot.lua.data.item.meta;
 
 import org.schema.game.common.data.element.meta.MetaObject;
 import org.schema.game.common.data.element.meta.MetaObjectManager;
+import thederpgamer.lorefulloot.lua.data.LuaCallable;
 
 /**
  * [Description]
@@ -12,6 +13,7 @@ public class Weapon extends MetaItem {
 
 	private short subType;
 
+	@LuaCallable
 	public Weapon(String name) {
 		super("WEAPON");
 		name = name.toUpperCase().replace(" ", "_");

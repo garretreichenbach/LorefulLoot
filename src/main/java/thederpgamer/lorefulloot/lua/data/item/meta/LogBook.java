@@ -2,20 +2,24 @@ package thederpgamer.lorefulloot.lua.data.item.meta;
 
 import org.schema.game.common.data.element.meta.Logbook;
 import org.schema.game.common.data.element.meta.MetaObject;
+import thederpgamer.lorefulloot.lua.data.LuaCallable;
 
 public class LogBook extends MetaItem {
 
 	private String contents;
 
+	@LuaCallable
 	public LogBook(String contents) {
 		super("LOG_BOOK");
 		this.contents = contents;
 	}
 
+	@LuaCallable
 	public String getContents() {
 		return contents;
 	}
 
+	@LuaCallable
 	public void setContents(String contents) {
 		this.contents = contents;
 	}

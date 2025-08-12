@@ -36,7 +36,7 @@ public class MiscUtils {
 	 * @param entity Entity to wreck.
 	 * <p>Note: Make sure you save a copy of your ship before using this function!</p>
 	 */
-	public static void wreckShip(final ManagedUsableSegmentController<?> entity, final ItemStack[] lootArray) {
+	public static void wreckEntity(final ManagedUsableSegmentController<?> entity) {
 		(new Thread() {
 			@Override
 			public void run() {
@@ -58,11 +58,9 @@ public class MiscUtils {
                     if(!entity.checkCore(entity.getSegmentBuffer().getPointUnsave(Ship.core))) {
 						entity.setMarkedForDeletePermanentIncludingDocks(true);
 						entity.setMarkedForDeleteVolatileIncludingDocks(true);
-                    } else {
-	                    fillInventories(entity, lootArray);
                     }
                 } catch(Exception exception) {
-					LorefulLoot.getInstance().logException("Failed to wreck ship: " + entity.getName(), exception);
+					LorefulLoot.getInstance().logException("Failed to wreck entity: " + entity.getName(), exception);
 					entity.setMarkedForDeletePermanentIncludingDocks(true);
 					entity.setMarkedForDeleteVolatileIncludingDocks(true);
 				}

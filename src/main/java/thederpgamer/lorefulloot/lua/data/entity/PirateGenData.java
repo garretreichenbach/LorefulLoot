@@ -12,61 +12,25 @@ import org.schema.game.server.data.blueprint.ChildStats;
 import org.schema.game.server.data.blueprint.SegmentControllerOutline;
 import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirect;
 import thederpgamer.lorefulloot.LorefulLoot;
-import thederpgamer.lorefulloot.lua.LuaData;
 import thederpgamer.lorefulloot.lua.data.LuaCallable;
 import thederpgamer.lorefulloot.lua.data.item.ItemStack;
 import thederpgamer.lorefulloot.lua.data.misc.LuaVector3f;
 import thederpgamer.lorefulloot.manager.GenerationManager;
 import thederpgamer.lorefulloot.utils.MiscUtils;
 
-public class EntityGenData extends LuaData {
-
-	private String bpName;
-	private String entityName;
-	private LuaTable loot;
+public class PirateGenData extends EntityGenData {
 
 	@LuaCallable
-	public EntityGenData(String bpName, String entityName, LuaTable loot) {
-		this.bpName = bpName;
-		this.entityName = entityName;
-		this.loot = loot;
+	public PirateGenData(String bpName, String entityName, LuaTable loot) {
+		super(bpName, entityName, loot);
 	}
 
-	@LuaCallable
-	public String getBpName() {
-		return bpName;
-	}
-
-	@LuaCallable
-	public void setBpName(String bpName) {
-		this.bpName = bpName;
-	}
-
-	@LuaCallable
-	public String getEntityName() {
-		return entityName;
-	}
-
-	@LuaCallable
-	public void setEntityName(String entityName) {
-		this.entityName = entityName;
-	}
-
-	@LuaCallable
-	public LuaTable getLoot() {
-		return loot;
-	}
-
-	@LuaCallable
-	public void setLoot(LuaTable loot) {
-		this.loot = loot;
-	}
-
+	@Override
 	public void spawnEntity(LuaVector3f sector) {
 		SegmentControllerOutline<?> scOutline = null;
 		final Vector3i sectorPos = new Vector3i(sector.getX(), sector.getY(), sector.getZ());
 		try {
-			scOutline = BluePrintController.active.loadBluePrint(GameServerState.instance, bpName, "[Wreckage] " + entityName + "_" + System.currentTimeMillis(), GenerationManager.getRandomTransformInSector(), -1, 0, sectorPos, "LorefulLoot", PlayerState.buffer, null, false, new ChildStats(false));
+			scOutline = BluePrintController.active.loadBluePrint(GameServerState.instance, getBpName(), getEntityName() + "_" + System.currentTimeMillis(), GenerationManager.getRandomTransformInSector(), -1, -1, sectorPos, "LorefulLoot", PlayerState.buffer, null, false, new ChildStats(false));
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to create entity for sector " + sectorPos + "!", exception);
 		}
@@ -87,22 +51,21 @@ public class EntityGenData extends LuaData {
 							if(!controller.isFullyLoadedWithDock()) {
 								return;
 							}
-							if(loot == null || loot.length() == 0) {
-								LorefulLoot.getInstance().logWarning("No loot defined for entity: " + bpName + " in sector: " + sectorPos);
+							if(getLoot() == null || getLoot().length() == 0) {
+								LorefulLoot.getInstance().logWarning("No loot defined for entity: " + getBpName() + " in sector: " + sectorPos);
 								return;
 							}
-							ItemStack[] lootArray = new ItemStack[loot.length()];
-							for(int i = 1; i <= loot.length(); i++) {
-								LuaValue itemData = loot.get(i);
+							ItemStack[] lootArray = new ItemStack[getLoot().length()];
+							for(int i = 1; i <= getLoot().length(); i++) {
+								LuaValue itemData = getLoot().get(i);
 								if(itemData.isuserdata(ItemStack.class)) {
 									ItemStack itemStack = (ItemStack) itemData.checkuserdata(ItemStack.class);
 									lootArray[i - 1] = itemStack;
 								} else {
-									LorefulLoot.getInstance().logWarning("Invalid item data at index " + i + " for entity: " + bpName + " in sector: " + sectorPos);
+									LorefulLoot.getInstance().logWarning("Invalid item data at index " + i + " for entity: " + getBpName() + " in sector: " + sectorPos);
 								}
 							}
-							MiscUtils.wreckEntity((ManagedUsableSegmentController<?>) controller);
-							if(!controller.isMarkedForPermanentDelete() && lootArray.length != 0) {
+							if(lootArray.length != 0) {
 								MiscUtils.fillInventories((ManagedUsableSegmentController<?>) controller, lootArray);
 							}
 						} catch(Exception exception) {
