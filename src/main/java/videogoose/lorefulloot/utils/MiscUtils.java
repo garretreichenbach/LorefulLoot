@@ -113,17 +113,17 @@ public class MiscUtils {
 	}
 
 	public static short getItemIdFromName(String name) {
-		name = name.toUpperCase(Locale.ENGLISH).replace(" ", "_").replace("-", "_");
+		name = name.toUpperCase(Locale.ENGLISH).replace(" ", "_").replace("-", "_").trim();
 		for(MetaObjectManager.MetaObjectType type : MetaObjectManager.MetaObjectType.values()) {
-			if(type.name().equals(name.replace(" ", "_").replace("-", "_"))) {
+			if(type.name().trim().equals(name)) {
 				return type.type;
 			}
 		}
 
 		for(ElementInformation info : ElementKeyMap.infoArray) {
 			if(info == null) continue; // Skip null entries
-			String idName = info.idName;
-			if(name.equals(idName)) {
+			String idName = info.idName.trim();
+			if(idName.contains(name)) {
 				return info.id;
 			}
 		}

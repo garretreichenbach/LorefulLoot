@@ -6,8 +6,16 @@ public class GenerationRule {
 
 	private String bpName;
 	private String entityName;
-	private boolean isPirate;
+	private int factionId = 0;
+	private boolean isWreck = true;
+	private boolean activateAi = false;
 	private float spawnChance = 100.0f; // 0.0 to 100.0
+	private int minLootRolls = -1;
+	private int maxLootRolls = -1;
+	private int minDistance = -1;
+	private int maxDistance = -1;
+	private int[] minSector;
+	private int[] maxSector;
 	private List<String> allowedSectorTypes;
 	private List<String> allowedStarColors;
 	private List<LootRule> loot;
@@ -28,12 +36,28 @@ public class GenerationRule {
 		this.entityName = entityName;
 	}
 
-	public boolean isPirate() {
-		return isPirate;
+	public int getFactionId() {
+		return factionId;
 	}
 
-	public void setPirate(boolean pirate) {
-		isPirate = pirate;
+	public void setFactionId(int factionId) {
+		this.factionId = factionId;
+	}
+
+	public boolean isWreck() {
+		return isWreck;
+	}
+
+	public void setWreck(boolean isWreck) {
+		this.isWreck = isWreck;
+	}
+
+	public boolean isActivateAi() {
+		return activateAi;
+	}
+
+	public void setActivateAi(boolean activateAi) {
+		this.activateAi = activateAi;
 	}
 
 	public float getSpawnChance() {
@@ -42,6 +66,54 @@ public class GenerationRule {
 
 	public void setSpawnChance(float spawnChance) {
 		this.spawnChance = spawnChance;
+	}
+
+	public int getMinLootRolls() {
+		return minLootRolls;
+	}
+
+	public void setMinLootRolls(int minLootRolls) {
+		this.minLootRolls = minLootRolls;
+	}
+
+	public int getMaxLootRolls() {
+		return maxLootRolls;
+	}
+
+	public void setMaxLootRolls(int maxLootRolls) {
+		this.maxLootRolls = maxLootRolls;
+	}
+
+	public int getMinDistance() {
+		return minDistance;
+	}
+
+	public void setMinDistance(int minDistance) {
+		this.minDistance = minDistance;
+	}
+
+	public int getMaxDistance() {
+		return maxDistance;
+	}
+
+	public void setMaxDistance(int maxDistance) {
+		this.maxDistance = maxDistance;
+	}
+
+	public int[] getMinSector() {
+		return minSector;
+	}
+
+	public void setMinSector(int[] minSector) {
+		this.minSector = minSector;
+	}
+
+	public int[] getMaxSector() {
+		return maxSector;
+	}
+
+	public void setMaxSector(int[] maxSector) {
+		this.maxSector = maxSector;
 	}
 
 	public List<String> getAllowedSectorTypes() {

@@ -8,6 +8,7 @@ import org.schema.game.common.controller.ManagedUsableSegmentController;
 import org.schema.game.common.controller.SegmentController;
 import org.schema.game.common.data.world.Sector;
 import org.schema.game.common.data.world.SectorInformation;
+import org.schema.game.common.data.world.StellarSystem;
 import org.schema.game.server.data.ServerConfig;
 import videogoose.lorefulloot.LorefulLoot;
 import videogoose.lorefulloot.data.generation.EntitySpawner;
@@ -15,6 +16,7 @@ import videogoose.lorefulloot.data.generation.GenerationRule;
 import videogoose.lorefulloot.utils.DataUtils;
 
 import javax.vecmath.Vector3f;
+import javax.vecmath.Vector4f;
 import java.io.File;
 import java.io.FileReader;
 import java.io.InputStream;
@@ -31,15 +33,15 @@ public class GenerationManager {
 	public static final HashMap<SegmentController, Long> overheatMap = new HashMap<>();
 
 	public static void initialize() {
-		File scriptsFolder = new File(DataUtils.getWorldDataPath(), "scripts");
+		File jsonFolder = new File(DataUtils.getWorldDataPath(), "json");
 		//Load default scripts
-		if(!scriptsFolder.exists() || scriptsFolder.listFiles() == null || Objects.requireNonNull(scriptsFolder.listFiles()).length == 0) {
-			scriptsFolder.mkdirs();
+		if(!jsonFolder.exists() || jsonFolder.listFiles() == null || Objects.requireNonNull(jsonFolder.listFiles()).length == 0) {
+			jsonFolder.mkdirs();
 			try {
-				InputStream inputStream = LorefulLoot.getInstance().getJarResource("default_wrecks.zip");
+				InputStream inputStream = LorefulLoot.getInstance().getJarResource("default_json.zip");
 				if(inputStream != null) {
-					DataUtils.unzip(inputStream, scriptsFolder);
-					LorefulLoot.getInstance().logInfo("Default generation scripts copied to: " + scriptsFolder.getAbsolutePath());
+					DataUtils.unzip(inputStream, jsonFolder);
+					LorefulLoot.getInstance().logInfo("Default generation scripts copied to: " + jsonFolder.getAbsolutePath());
 				} else {
 					LorefulLoot.getInstance().logWarning("Default generation script not found!");
 				}
@@ -66,7 +68,7 @@ public class GenerationManager {
 		}
 	}
 
-	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, boolean forced) {
+	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, Vector4f starColor, boolean forced) {
 		try {
 			File jsonFolder = new File(DataUtils.getWorldDataPath(), "json");
 			if(!jsonFolder.exists() || jsonFolder.listFiles() == null || Objects.requireNonNull(jsonFolder.listFiles()).length == 0) {
@@ -95,6 +97,49 @@ public class GenerationManager {
 							if(rule.getAllowedSectorTypes() != null && !rule.getAllowedSectorTypes().isEmpty()) {
 								if(!rule.getAllowedSectorTypes().contains(sectorType.name())) {
 									continue;
+								}
+							}
+
+							if(rule.getMinSector() != null && rule.getMinSector().length == 3) {
+								if(sector.pos.x < rule.getMinSector()[0] || sector.pos.y < rule.getMinSector()[1] || sector.pos.z < rule.getMinSector()[2]) {
+									continue;
+								}
+							}
+							if(rule.getMaxSector() != null && rule.getMaxSector().length == 3) {
+								if(sector.pos.x > rule.getMaxSector()[0] || sector.pos.y > rule.getMaxSector()[1] || sector.pos.z > rule.getMaxSector()[2]) {
+									continue;
+								}
+							}
+
+							double distance = 0;
+							try {
+								StellarSystem system = sector._getSystem();
+								if(system != null) {
+									int sysSize = 16;
+									double sunX = system.getPos().x * sysSize;
+									double sunY = system.getPos().y * sysSize;
+									double sunZ = system.getPos().z * sysSize;
+									distance = Math.sqrt(Math.pow(sector.pos.x - sunX, 2) + Math.pow(sector.pos.y - sunY, 2) + Math.pow(sector.pos.z - sunZ, 2));
+								}
+							} catch(Exception ignored) {
+							}
+
+							if(rule.getMinDistance() >= 0 && distance < rule.getMinDistance()) {
+								continue;
+							}
+
+							if(rule.getMaxDistance() >= 0 && distance > rule.getMaxDistance()) {
+								continue;
+							}
+
+							if(rule.getAllowedStarColors() != null && !rule.getAllowedStarColors().isEmpty()) {
+								if(starColor != null) {
+									String colorString = String.format(java.util.Locale.ENGLISH, "%.1f, %.1f, %.1f", starColor.x, starColor.y, starColor.z);
+									if(!rule.getAllowedStarColors().contains(colorString)) {
+										continue;
+									}
+								} else {
+									continue; // Require matching star color, but none available
 								}
 							}
 						}

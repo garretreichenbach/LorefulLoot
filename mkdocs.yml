@@ -1,0 +1,25 @@
+site_name: LorefulLoot
+site_description: A Lore and Salvage Expansion Mod for StarMade
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+
+nav:
+  - Home: index.md
+  - Generation JSON Configuration: configuration.md
+  - Loot Pools & Weights: loot_pools.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true

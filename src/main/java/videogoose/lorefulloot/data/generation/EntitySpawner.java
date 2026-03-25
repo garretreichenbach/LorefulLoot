@@ -21,8 +21,8 @@ public class EntitySpawner {
 	public static void spawnEntity(GenerationRule rule, Vector3i sectorPos) {
 		SegmentControllerOutline<?> scOutline = null;
 
-		int factionId = rule.isPirate() ? -1 : 0;
-		String spawnName = rule.isPirate() ? rule.getEntityName() + "_" + System.currentTimeMillis() : rule.getEntityName() + " [Wreckage]";
+		int factionId = rule.getFactionId();
+		String spawnName = rule.isWreck() ? rule.getEntityName() + " [Wreckage]" : rule.getEntityName() + "_" + System.currentTimeMillis();
 
 		try {
 			scOutline = BluePrintController.active.loadBluePrint(GameServerState.instance, rule.getBpName(), spawnName, GenerationManager.getRandomTransformInSector(), -1, factionId, sectorPos, "LorefulLoot", PlayerState.buffer, null, false, new ChildStats(false));
@@ -46,23 +46,51 @@ public class EntitySpawner {
 							return;
 						}
 
-						ItemStack[] lootArray = new ItemStack[0];
+						java.util.List<ItemStack> rolledLoot = new java.util.ArrayList<>();
 						if(rule.getLoot() != null && !rule.getLoot().isEmpty()) {
-							lootArray = new ItemStack[rule.getLoot().size()];
-							for(int i = 0; i < rule.getLoot().size(); i++) {
-								LootRule lootRule = rule.getLoot().get(i);
-								try {
-									lootArray[i] = new ItemStack(lootRule.getItemName(), lootRule.getCount());
-								} catch(Exception exception) {
-									LorefulLoot.getInstance().logWarning("Invalid item data for entity: " + rule.getBpName() + " in sector: " + sectorPos);
+							if (rule.getMinLootRolls() > 0 && rule.getMaxLootRolls() >= rule.getMinLootRolls()) {
+								int rolls = rule.getMinLootRolls() + (int)(Math.random() * (rule.getMaxLootRolls() - rule.getMinLootRolls() + 1));
+								int totalWeight = 0;
+								for (LootRule lr : rule.getLoot()) {
+									totalWeight += lr.getWeight();
+								}
+								if (totalWeight > 0) {
+									for (int i = 0; i < rolls; i++) {
+										int roll = (int)(Math.random() * totalWeight);
+										int currentWeight = 0;
+										for (LootRule lr : rule.getLoot()) {
+											currentWeight += lr.getWeight();
+											if (roll < currentWeight) {
+												int count = lr.getCount() > 0 ? lr.getCount() : lr.getMinCount() + (int)(Math.random() * (lr.getMaxCount() - lr.getMinCount() + 1));
+												try {
+													rolledLoot.add(new ItemStack(lr.getItemName(), count));
+												} catch(Exception exception) {
+													LorefulLoot.getInstance().logWarning("Invalid item data for entity: " + rule.getBpName() + " in sector: " + sectorPos);
+												}
+												break;
+											}
+										}
+									}
+								}
+							} else {
+								for (LootRule lr : rule.getLoot()) {
+									int count = lr.getCount() > 0 ? lr.getCount() : lr.getMinCount() + (int)(Math.random() * (lr.getMaxCount() - lr.getMinCount() + 1));
+									try {
+										rolledLoot.add(new ItemStack(lr.getItemName(), count));
+									} catch(Exception exception) {
+										LorefulLoot.getInstance().logWarning("Invalid item data for entity: " + rule.getBpName() + " in sector: " + sectorPos);
+									}
 								}
 							}
 						}
+						ItemStack[] lootArray = rolledLoot.toArray(new ItemStack[0]);
 
-						if(!rule.isPirate()) {
+						if(rule.isWreck()) {
 							MiscUtils.wreckEntity((ManagedUsableSegmentController<?>) controller);
 							WreckageManager.addWreckage(controller, "generated");
-						} else if(controller instanceof Ship) {
+						}
+						
+						if(rule.isActivateAi() && controller instanceof Ship) {
 							Ship ship = (Ship) controller;
 							ship.activateAI(true, true);
 						}

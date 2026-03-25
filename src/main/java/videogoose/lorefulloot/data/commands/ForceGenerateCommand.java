@@ -37,7 +37,14 @@ public class ForceGenerateCommand implements CommandInterface {
 	public boolean onCommand(PlayerState playerState, String[] strings) {
 		try {
 			Sector sector = GameServer.getUniverse().getSector(playerState.getCurrentSectorId());
-			GenerationManager.generateForSector(sector, sector.getSectorType(), true);
+			javax.vecmath.Vector4f starColor = new javax.vecmath.Vector4f(1, 1, 1, 1);
+			try {
+				org.schema.game.server.data.Galaxy galaxy = sector.getState().getUniverse().getGalaxyFromSystemPos(sector._getSystem().getPos());
+				if (galaxy != null) {
+					starColor = galaxy.getSunColor(sector._getSystem().getPos());
+				}
+			} catch(Exception ignored) {}
+			GenerationManager.generateForSector(sector, sector.getSectorType(), starColor, true);
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to force generate loot for sector!", exception);
 		}
