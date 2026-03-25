@@ -36,13 +36,13 @@ tasks.register("updateVersion") {
     }
 }
 
-tasks.register("zipDefaultScripts", Zip) {
-    from 'src/main/resources/default_scripts'
+tasks.register("zipDefaultWrecks", Zip) {
+    from 'src/main/resources/default_wrecks'
     include '**/*'
-    archiveFileName = 'default_scripts.zip'
+    archiveFileName = 'default_wrecks.zip'
     destinationDirectory = file('src/main/resources')
     doFirst {
-        def defaultScriptsDir = file('src/main/resources/default_scripts')
+        def defaultScriptsDir = file('src/main/resources/default_wrecks')
         if(!defaultScriptsDir.exists()) {
             throw new GradleException("Default scripts directory does not exist: " + defaultScriptsDir.getAbsolutePath())
         }
@@ -63,12 +63,12 @@ tasks.register("zipDefaultBlueprints", Zip) {
 }
 
 jar {
-    dependsOn("updateVersion", "zipDefaultScripts", "zipDefaultBlueprints")
+    dependsOn("updateVersion", "zipDefaultWrecks", "zipDefaultBlueprints")
     duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     destinationDirectory.set(file(starmadeDirectory + "mods"))
     archiveFileName = modName + 'v' + getVersion() +  '.jar'
     manifest.attributes('Main-Class': mainClassName)
-    from('src/main/resources/default_scripts.zip')
+    from('src/main/resources/default_wrecks.zip')
     from('src/main/resources/default_blueprints.zip')
     from {
         configurations.runtimeClasspath.collect {

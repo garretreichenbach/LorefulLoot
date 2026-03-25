@@ -24,12 +24,8 @@ import videogoose.lorefulloot.data.item.meta.MetaItem;
 import javax.vecmath.Vector3f;
 import java.util.Locale;
 
-/**
- * Utility class for miscellaneous functions.
- *
- * @author TheDerpGamer
- */
 public class MiscUtils {
+
 	/**
 	 * Wrecks an entity based off a damage intensity.
 	 *
@@ -123,6 +119,7 @@ public class MiscUtils {
 				return type.type;
 			}
 		}
+
 		for(ElementInformation info : ElementKeyMap.infoArray) {
 			if(info == null) continue; // Skip null entries
 			String idName = info.idName;

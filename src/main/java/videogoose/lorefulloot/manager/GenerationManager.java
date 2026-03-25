@@ -15,7 +15,6 @@ import videogoose.lorefulloot.data.generation.GenerationRule;
 import videogoose.lorefulloot.utils.DataUtils;
 
 import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
 import java.io.File;
 import java.io.FileReader;
 import java.io.InputStream;
@@ -37,7 +36,7 @@ public class GenerationManager {
 		if(!scriptsFolder.exists() || scriptsFolder.listFiles() == null || Objects.requireNonNull(scriptsFolder.listFiles()).length == 0) {
 			scriptsFolder.mkdirs();
 			try {
-				InputStream inputStream = LorefulLoot.getInstance().getJarResource("default_scripts.zip");
+				InputStream inputStream = LorefulLoot.getInstance().getJarResource("default_wrecks.zip");
 				if(inputStream != null) {
 					DataUtils.unzip(inputStream, scriptsFolder);
 					LorefulLoot.getInstance().logInfo("Default generation scripts copied to: " + scriptsFolder.getAbsolutePath());
@@ -67,38 +66,42 @@ public class GenerationManager {
 		}
 	}
 
-	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, Vector4f starColor, boolean forced) {
+	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, boolean forced) {
 		try {
-			File scriptsFolder = new File(DataUtils.getWorldDataPath(), "scripts");
-			if(!scriptsFolder.exists() || scriptsFolder.listFiles() == null || Objects.requireNonNull(scriptsFolder.listFiles()).length == 0) {
-				LorefulLoot.getInstance().logWarning("No scripts found in: " + scriptsFolder.getAbsolutePath());
+			File jsonFolder = new File(DataUtils.getWorldDataPath(), "json");
+			if(!jsonFolder.exists() || jsonFolder.listFiles() == null || Objects.requireNonNull(jsonFolder.listFiles()).length == 0) {
+				LorefulLoot.getInstance().logWarning("No json found in: " + jsonFolder.getAbsolutePath());
 				return;
 			}
 			Gson gson = new Gson();
-			for(File scriptFile : Objects.requireNonNull(scriptsFolder.listFiles())) {
+			for(File scriptFile : Objects.requireNonNull(jsonFolder.listFiles())) {
 				if(!scriptFile.getName().endsWith(".json")) continue; //Only process json
 				String scriptName = scriptFile.getName().substring(0, scriptFile.getName().length() - 5); //Remove .json extension
 				if(scriptName.isEmpty()) continue; //Skip empty names
 				LorefulLoot.getInstance().logInfo("Loading script: " + scriptName);
-				
-				try (FileReader reader = new FileReader(scriptFile)) {
+
+				try(FileReader reader = new FileReader(scriptFile)) {
 					GenerationRule[] rules = gson.fromJson(reader, GenerationRule[].class);
-					if (rules == null) continue;
-					
-					for (GenerationRule rule : rules) {
-						if (!forced) {
-							if (rule.getSpawnChance() < 100.0f) {
+					if(rules == null) continue;
+
+					for(GenerationRule rule : rules) {
+						if(!forced) {
+							if(rule.getSpawnChance() < 100.0f) {
 								float chance = (float) (Math.random() * 100.0f);
-								if (chance > rule.getSpawnChance()) continue;
+								if(chance > rule.getSpawnChance()) {
+									continue;
+								}
 							}
-							if (rule.getAllowedSectorTypes() != null && !rule.getAllowedSectorTypes().isEmpty()) {
-								if (!rule.getAllowedSectorTypes().contains(sectorType.name())) continue;
+							if(rule.getAllowedSectorTypes() != null && !rule.getAllowedSectorTypes().isEmpty()) {
+								if(!rule.getAllowedSectorTypes().contains(sectorType.name())) {
+									continue;
+								}
 							}
 						}
-						
+
 						EntitySpawner.spawnEntity(rule, new Vector3i(sector.pos.x, sector.pos.y, sector.pos.z));
 					}
-				} catch (Exception e) {
+				} catch(Exception e) {
 					LorefulLoot.getInstance().logException("Failed to load/execute JSON generation rule: " + scriptName, e);
 				}
 			}
@@ -137,8 +140,8 @@ public class GenerationManager {
 			if(entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()) > 15000) {
 				overheatMap.put(entity, entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()));
 			} else {
-				if(!entity.getRealName().startsWith("[Wreckage] ")) {
-					entity.setRealName("[Wreckage] " + entity.getRealName());
+				if(!WreckageManager.getWreckages().containsKey(entity.getUniqueIdentifier())) {
+					entity.setRealName(entity.getRealName() + "[Wreckage]");
 					entity.setFactionId(0);
 					entity.setMarkedForDeletePermanentIncludingDocks(false);
 					entity.setMarkedForDeleteVolatileIncludingDocks(false);

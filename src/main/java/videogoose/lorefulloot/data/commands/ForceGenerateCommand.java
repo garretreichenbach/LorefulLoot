@@ -9,7 +9,6 @@ import videogoose.lorefulloot.LorefulLoot;
 import videogoose.lorefulloot.manager.GenerationManager;
 
 import javax.annotation.Nullable;
-import javax.vecmath.Vector4f;
 
 public class ForceGenerateCommand implements CommandInterface {
 
@@ -38,7 +37,7 @@ public class ForceGenerateCommand implements CommandInterface {
 	public boolean onCommand(PlayerState playerState, String[] strings) {
 		try {
 			Sector sector = GameServer.getUniverse().getSector(playerState.getCurrentSectorId());
-			GenerationManager.generateForSector(sector, sector.getSectorType(), new Vector4f(), true);
+			GenerationManager.generateForSector(sector, sector.getSectorType(), true);
 		} catch(Exception exception) {
 			LorefulLoot.getInstance().logException("Failed to force generate loot for sector!", exception);
 		}

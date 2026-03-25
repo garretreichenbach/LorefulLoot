@@ -7,7 +7,6 @@ import org.schema.game.server.data.Galaxy;
 import videogoose.lorefulloot.LorefulLoot;
 import videogoose.lorefulloot.manager.GenerationManager;
 
-import javax.vecmath.Vector4f;
 import java.io.IOException;
 
 public class SectorGenerateEventListener implements SectorGenerateListener {
@@ -20,7 +19,6 @@ public class SectorGenerateEventListener implements SectorGenerateListener {
 			LorefulLoot.getInstance().logWarning("Galaxy not found for sector generation event!");
 			return;
 		}
-		Vector4f starColor = galaxy.getSunColor(system.getPos());
-		GenerationManager.generateForSector(sector, sector.getSectorType(), starColor, true);
+		GenerationManager.generateForSector(sector, sector.getSectorType(), true);
 	}
 }

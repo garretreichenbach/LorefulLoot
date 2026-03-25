@@ -1,0 +1,22 @@
+[
+	{
+		"bpName": "ASD-Freighter",
+		"entityName": "Destroyed Freighter",
+		"isPirate": false,
+		"spawnChance": 12.0,
+		"allowedSectorTypes": ["planet"],
+		"loot": [
+			{
+				"itemName": "STEAK",
+				"count": 5
+			}
+		]
+	},
+	{
+		"bpName": "Foxglove Class Mark IV",
+		"entityName": "Foxglove Class Mark IV",
+		"isPirate": true,
+		"spawnChance": 7.5,
+		"allowedSectorTypes": ["planet"]
+	}
+]
