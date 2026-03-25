@@ -1,17 +1,18 @@
 {
   "name": "LorefulLoot",
-  "author": "TheDerpGamer",
+  "author": "VideoGoose (TheDerpGamer)",
   "description": "Adds naturally spawning wrecks filled with loot.",
   "version": "2.0.0",
-  "starmade_version": "0.204.102",
+  "starmade_version": "0.205.4",
   "client_mod": false,
   "server_mod": false,
-  "main_class": "thederpgamer.lorefulloot.LorefulLoot",
+  "main_class": "videogoose.lorefulloot.LorefulLoot",
   "smd_resource_id": 8478,
   "dependencies": [
     -1
   ],
   "core_mod": false,
   "requires_class_resize": false,
-  "hard_load_all_classes": false
+  "hard_load_all_classes": false,
+  "mixin_configs": []
 }
