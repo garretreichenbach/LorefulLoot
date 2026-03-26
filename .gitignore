@@ -19,5 +19,3 @@ gradle-app.setting
 /starmade/
 /.idea/
 gradle.properties
-/src/main/resources/default_blueprints.zip
-/src/main/resources/default_scripts.zip

@@ -17,11 +17,16 @@ import videogoose.lorefulloot.utils.DataUtils;
 
 import javax.vecmath.Vector3f;
 import javax.vecmath.Vector4f;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * Manager class for handling generation of entities and loot.
@@ -50,25 +55,70 @@ public class GenerationManager {
 			}
 		}
 
-		//Load default blueprints
-		File blueprintsFolder = new File(DataUtils.getWorldDataPath(), "blueprints");
-		if(!blueprintsFolder.exists() || blueprintsFolder.listFiles() == null || Objects.requireNonNull(blueprintsFolder.listFiles()).length == 0) {
-			blueprintsFolder.mkdirs();
-			try {
-				InputStream inputStream = LorefulLoot.getInstance().getJarResource("default_blueprints.zip");
-				if(inputStream != null) {
-					DataUtils.unzip(inputStream, blueprintsFolder);
-					LorefulLoot.getInstance().logInfo("Default blueprints copied to: " + blueprintsFolder.getAbsolutePath());
-				} else {
-					LorefulLoot.getInstance().logWarning("Default blueprints not found!");
+		//Load default blueprints into StarMade's blueprints directory
+		File blueprintsFolder = new File("blueprints");
+		blueprintsFolder.mkdirs();
+		try {
+			InputStream zipStream = LorefulLoot.getInstance().getJarResource("default_blueprints.zip");
+			if(zipStream != null) {
+				ZipInputStream outerZip = new ZipInputStream(zipStream);
+				ZipEntry outerEntry;
+				while((outerEntry = outerZip.getNextEntry()) != null) {
+					if(outerEntry.isDirectory()) { outerZip.closeEntry(); continue; }
+					String smentName = outerEntry.getName();
+					if(!smentName.endsWith(".sment")) { outerZip.closeEntry(); continue; }
+					String bpName = smentName.substring(0, smentName.length() - 6);
+					File bpFolder = new File(blueprintsFolder, bpName);
+					if(bpFolder.exists()) { outerZip.closeEntry(); continue; }
+					bpFolder.mkdirs();
+					// Read the sment bytes without closing the outer zip
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					byte[] buf = new byte[8192];
+					int read;
+					while((read = outerZip.read(buf)) != -1) baos.write(buf, 0, read);
+					outerZip.closeEntry();
+					// Extract the sment (inner zip), stripping its top-level directory
+					ZipInputStream innerZip = new ZipInputStream(new ByteArrayInputStream(baos.toByteArray()));
+					ZipEntry innerEntry;
+					String topDir = null;
+					while((innerEntry = innerZip.getNextEntry()) != null) {
+						String entryPath = innerEntry.getName();
+						if(topDir == null) {
+							int slash = entryPath.indexOf('/');
+							topDir = (slash != -1) ? entryPath.substring(0, slash + 1) : "";
+						}
+						String rel = (!topDir.isEmpty() && entryPath.startsWith(topDir)) ? entryPath.substring(topDir.length()) : entryPath;
+						if(rel.isEmpty()) { innerZip.closeEntry(); continue; }
+						File target = new File(bpFolder, rel);
+						if(innerEntry.isDirectory()) {
+							target.mkdirs();
+						} else {
+							target.getParentFile().mkdirs();
+							try(FileOutputStream fos = new FileOutputStream(target)) {
+								byte[] copyBuf = new byte[8192];
+								int n;
+								while((n = innerZip.read(copyBuf)) != -1) fos.write(copyBuf, 0, n);
+							}
+						}
+						innerZip.closeEntry();
+					}
+					innerZip.close();
 				}
-			} catch(Exception exception) {
-				LorefulLoot.getInstance().logException("Failed to copy default blueprint!", exception);
+				outerZip.close();
+				LorefulLoot.getInstance().logInfo("Default blueprints installed to: " + blueprintsFolder.getAbsolutePath());
+			} else {
+				LorefulLoot.getInstance().logWarning("Default blueprints not found!");
 			}
+		} catch(Exception exception) {
+			LorefulLoot.getInstance().logException("Failed to install default blueprints!", exception);
 		}
 	}
 
 	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, Vector4f starColor, boolean forced) {
+		generateForSector(sector, sectorType, starColor, forced, null);
+	}
+
+	public static void generateForSector(Sector sector, SectorInformation.SectorType sectorType, Vector4f starColor, boolean forced, String configFilter) {
 		try {
 			File jsonFolder = new File(DataUtils.getWorldDataPath(), "json");
 			if(!jsonFolder.exists() || jsonFolder.listFiles() == null || Objects.requireNonNull(jsonFolder.listFiles()).length == 0) {
@@ -80,7 +130,8 @@ public class GenerationManager {
 				if(!scriptFile.getName().endsWith(".json")) continue; //Only process json
 				String scriptName = scriptFile.getName().substring(0, scriptFile.getName().length() - 5); //Remove .json extension
 				if(scriptName.isEmpty()) continue; //Skip empty names
-				LorefulLoot.getInstance().logInfo("Loading script: " + scriptName);
+				if(configFilter != null && !scriptName.equalsIgnoreCase(configFilter)) continue;
+				LorefulLoot.getInstance().logInfo("Loading json: " + scriptName);
 
 				try(FileReader reader = new FileReader(scriptFile)) {
 					GenerationRule[] rules = gson.fromJson(reader, GenerationRule[].class);

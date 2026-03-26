@@ -63,7 +63,7 @@ tasks.register("zipDefaultBlueprints", Zip) {
 }
 
 jar {
-    dependsOn("updateVersion", "zipDefaultJson", "zipDefaultBlueprints")
+    dependsOn("updateVersion")
     duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     destinationDirectory.set(file(starmadeDirectory + "mods"))
     archiveFileName = modName + 'v' + getVersion() +  '.jar'
@@ -80,3 +80,5 @@ jar {
         }
     }
 }
+
+tasks.processResources.dependsOn("updateVersion")

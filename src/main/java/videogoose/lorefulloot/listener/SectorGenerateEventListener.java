@@ -1,6 +1,6 @@
 package videogoose.lorefulloot.listener;
 
-import api.listener.fastevents.SectorGenerateListener;
+import api.listener.fastevents.world.SectorGenerateListener;
 import org.schema.game.common.data.world.Sector;
 import org.schema.game.common.data.world.StellarSystem;
 import org.schema.game.common.data.world.Universe;
@@ -14,7 +14,7 @@ import java.io.IOException;
 public class SectorGenerateEventListener implements SectorGenerateListener {
 
 	@Override
-	public void onGenerate(Universe universe, Sector sector, long TimeTaken) throws IOException {
+	public void onGenerate(Universe universe, Sector sector, long TimeTaken) {
 		StellarSystem system = sector._getSystem();
 		Galaxy galaxy = universe.getGalaxyFromSystemPos(system.getPos());
 		if(galaxy == null) {
@@ -22,6 +22,10 @@ public class SectorGenerateEventListener implements SectorGenerateListener {
 			return;
 		}
 		Vector4f starColor = galaxy.getSunColor(system.getPos());
-		GenerationManager.generateForSector(sector, sector.getSectorType(), starColor, true);
+		try {
+			GenerationManager.generateForSector(sector, sector.getSectorType(), starColor, true);
+		} catch(IOException exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 }

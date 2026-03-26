@@ -16,6 +16,9 @@ import videogoose.lorefulloot.manager.GenerationManager;
 import videogoose.lorefulloot.manager.WreckageManager;
 import videogoose.lorefulloot.utils.MiscUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class EntitySpawner {
 
 	public static void spawnEntity(GenerationRule rule, Vector3i sectorPos) {
@@ -46,7 +49,7 @@ public class EntitySpawner {
 							return;
 						}
 
-						java.util.List<ItemStack> rolledLoot = new java.util.ArrayList<>();
+						List<ItemStack> rolledLoot = new ArrayList<>();
 						if(rule.getLoot() != null && !rule.getLoot().isEmpty()) {
 							if (rule.getMinLootRolls() > 0 && rule.getMaxLootRolls() >= rule.getMinLootRolls()) {
 								int rolls = rule.getMinLootRolls() + (int)(Math.random() * (rule.getMaxLootRolls() - rule.getMinLootRolls() + 1));
@@ -86,7 +89,7 @@ public class EntitySpawner {
 						ItemStack[] lootArray = rolledLoot.toArray(new ItemStack[0]);
 
 						if(rule.isWreck()) {
-							MiscUtils.wreckEntity((ManagedUsableSegmentController<?>) controller);
+//							MiscUtils.wreckEntity((ManagedUsableSegmentController<?>) controller); causes rail exceptions
 							WreckageManager.addWreckage(controller, "generated");
 						}
 						
