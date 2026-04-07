@@ -237,6 +237,16 @@ public class GenerationManager {
 				overheatMap.put(entity, entity.getCoreOverheatingTimeLeftMS(System.currentTimeMillis()));
 			} else {
 				if(!WreckageManager.getWreckages().containsKey(entity.getUniqueIdentifier())) {
+					float minMass = (float) ConfigManager.getMainConfig().getDouble("combat-wreck-min-mass");
+					if(entity.getTotalPhysicalMass() < minMass) {
+						overheatMap.remove(entity);
+						return;
+					}
+					int chance = ConfigManager.getMainConfig().getInt("combat-wreck-chance");
+					if((int)(Math.random() * 100) >= chance) {
+						overheatMap.remove(entity);
+						return;
+					}
 					entity.setRealName(entity.getRealName() + "[Wreckage]");
 					entity.setFactionId(0);
 					entity.setMarkedForDeletePermanentIncludingDocks(false);

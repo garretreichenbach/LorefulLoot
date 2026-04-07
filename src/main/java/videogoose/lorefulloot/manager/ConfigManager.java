@@ -9,7 +9,9 @@ public class ConfigManager {
 	private static final String[] defaultMainConfig = {
 			"debug-mode: false",
 			"max-world-logs: 5",
-			"generate-shipwrecks-from-combat: true"
+			"generate-shipwrecks-from-combat: true",
+			"combat-wreck-chance: 25",
+			"combat-wreck-min-mass: 1000"
 	};
 
 	public static void initialize(LorefulLoot instance) {
