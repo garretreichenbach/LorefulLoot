@@ -2,7 +2,7 @@
   "name": "LorefulLoot",
   "author": "VideoGoose (TheDerpGamer)",
   "description": "Adds naturally spawning wrecks filled with loot.",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "starmade_version": "0.205.4",
   "client_mod": false,
   "server_mod": false,

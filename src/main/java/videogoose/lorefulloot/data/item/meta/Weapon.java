@@ -3,11 +3,6 @@ package videogoose.lorefulloot.data.item.meta;
 import org.schema.game.common.data.element.meta.MetaObject;
 import org.schema.game.common.data.element.meta.MetaObjectManager;
 
-/**
- * [Description]
- *
- * @author VGoose (TheDerpGamer)
- */
 public class Weapon extends MetaItem {
 
 	private short subType;

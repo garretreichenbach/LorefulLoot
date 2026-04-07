@@ -2,7 +2,7 @@
 
 LorefulLoot uses a lightweight JSON ruleset for spawning entities when a new sector is generated. 
 
-By default, the mod looks in the `<universe_data>/json/` folder for any `.json` files. You can create as many JSON files as you want; the mod will evaluate all of them when generating a sector.
+By default, the mod looks in the `StarMade/moddata/LorefulLoot/data/<universe_name>/json/` folder for any `.json` files. You can create as many JSON files as you want; the mod will evaluate all of them when generating a sector.
 
 ## The Rule Structure
 

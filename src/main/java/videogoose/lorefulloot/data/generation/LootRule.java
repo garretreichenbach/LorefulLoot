@@ -3,6 +3,8 @@ package videogoose.lorefulloot.data.generation;
 public class LootRule {
 
 	private String itemName;
+	private String text;
+	private String subtype;
 	private int count = -1;
 	private int minCount = 1;
 	private int maxCount = 1;
@@ -14,6 +16,22 @@ public class LootRule {
 
 	public void setItemName(String itemName) {
 		this.itemName = itemName;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
+	}
+
+	public String getSubtype() {
+		return subtype;
+	}
+
+	public void setSubtype(String subtype) {
+		this.subtype = subtype;
 	}
 
 	public int getCount() {

@@ -39,8 +39,31 @@ It will still respect the `minCount` and `maxCount` constraints to randomize the
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `itemName` | String | (Required) | The internal ID name of the StarMade item (e.g. `STEAK`, `SHIP_CORE`). |
+| `itemName` | String | (Required) | The internal ID name of the StarMade item (e.g. `STEAK`, `SHIP_CORE`). Ignored for logbooks and weapons — see `text` and `subtype`. |
 | `minCount` | Integer | `1` | The minimum amount of this item to spawn in a single stack. |
 | `maxCount` | Integer | `1` | The maximum amount of this item to spawn in a single stack. |
 | `count` | Integer | `-1` | Hard override. If set, ignores min/max and spawns exactly this amount. |
 | `weight` | Integer | `1` | The relative chance of this item being picked during a weighted loot roll. |
+| `text` | String | `null` | If set, spawns a **Logbook** meta-item with this string as its contents. Overrides `itemName`. |
+| `subtype` | String | `null` | If set, spawns a **Weapon** meta-item of this subtype (e.g. `PISTOL`). Overrides `itemName`. Takes precedence over `itemName` but is overridden by `text`. |
+
+### Meta-Item Examples
+
+**Logbook** — spawns a readable logbook with custom lore text:
+
+```json
+{
+  "text": "Day 47. The engines are dead and we're drifting. If anyone finds this...",
+  "weight": 5
+}
+```
+
+**Weapon** — spawns a weapon of the specified subtype:
+
+```json
+{
+  "subtype": "PISTOL",
+  "count": 1,
+  "weight": 8
+}
+```

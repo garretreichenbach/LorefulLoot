@@ -12,6 +12,8 @@ import org.schema.game.server.data.blueprint.SegmentControllerOutline;
 import org.schema.game.server.data.blueprint.SegmentControllerSpawnCallbackDirect;
 import videogoose.lorefulloot.LorefulLoot;
 import videogoose.lorefulloot.data.item.ItemStack;
+import videogoose.lorefulloot.data.item.meta.LogBook;
+import videogoose.lorefulloot.data.item.meta.Weapon;
 import videogoose.lorefulloot.manager.GenerationManager;
 import videogoose.lorefulloot.manager.WreckageManager;
 import videogoose.lorefulloot.utils.MiscUtils;
@@ -20,6 +22,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EntitySpawner {
+
+	private static ItemStack buildItemStack(LootRule lr, int count) {
+		if(lr.getText() != null && !lr.getText().isEmpty()) {
+			return new LogBook(lr.getText());
+		} else if(lr.getSubtype() != null && !lr.getSubtype().isEmpty()) {
+			return new Weapon(lr.getSubtype());
+		} else {
+			return new ItemStack(lr.getItemName(), count);
+		}
+	}
 
 	public static void spawnEntity(GenerationRule rule, Vector3i sectorPos) {
 		SegmentControllerOutline<?> scOutline = null;
@@ -66,7 +78,7 @@ public class EntitySpawner {
 											if (roll < currentWeight) {
 												int count = lr.getCount() > 0 ? lr.getCount() : lr.getMinCount() + (int)(Math.random() * (lr.getMaxCount() - lr.getMinCount() + 1));
 												try {
-													rolledLoot.add(new ItemStack(lr.getItemName(), count));
+													rolledLoot.add(buildItemStack(lr, count));
 												} catch(Exception exception) {
 													LorefulLoot.getInstance().logWarning("Invalid item data for entity: " + rule.getBpName() + " in sector: " + sectorPos);
 												}
@@ -79,7 +91,7 @@ public class EntitySpawner {
 								for (LootRule lr : rule.getLoot()) {
 									int count = lr.getCount() > 0 ? lr.getCount() : lr.getMinCount() + (int)(Math.random() * (lr.getMaxCount() - lr.getMinCount() + 1));
 									try {
-										rolledLoot.add(new ItemStack(lr.getItemName(), count));
+										rolledLoot.add(buildItemStack(lr, count));
 									} catch(Exception exception) {
 										LorefulLoot.getInstance().logWarning("Invalid item data for entity: " + rule.getBpName() + " in sector: " + sectorPos);
 									}

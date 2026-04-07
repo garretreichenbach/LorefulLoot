@@ -1,13 +1,7 @@
 site_name: LorefulLoot
 site_description: A Lore and Salvage Expansion Mod for StarMade
 theme:
-  name: material
-  features:
-    - navigation.tabs
-    - navigation.sections
-    - toc.integrate
-    - search.suggest
-    - search.highlight
+  name: readthedocs
 
 nav:
   - Home: index.md
@@ -16,10 +10,6 @@ nav:
 
 markdown_extensions:
   - admonition
-  - pymdownx.details
-  - pymdownx.superfences
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.inlinehilite
-  - pymdownx.tabbed:
-      alternate_style: true
+  - toc:
+      permalink: true
+  - fenced_code
