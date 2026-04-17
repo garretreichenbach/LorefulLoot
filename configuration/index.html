@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Generation JSON Configuration - LorefulLoot</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Generation JSON Configuration";
+        var mkdocs_page_input_path = "configuration.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> LorefulLoot
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Generation JSON Configuration</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-rule-structure">The Rule Structure</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#generationrule-properties">GenerationRule Properties</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../loot_pools/">Loot Pools & Weights</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">LorefulLoot</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Generation JSON Configuration</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="json-configuration">JSON Configuration<a class="headerlink" href="#json-configuration" title="Permanent link">&para;</a></h1>
+<p>LorefulLoot uses a lightweight JSON ruleset for spawning entities when a new sector is generated. </p>
+<p>By default, the mod looks in the <code>StarMade/moddata/LorefulLoot/data/&lt;universe_name&gt;/json/</code> folder for any <code>.json</code> files. You can create as many JSON files as you want; the mod will evaluate all of them when generating a sector.</p>
+<h2 id="the-rule-structure">The Rule Structure<a class="headerlink" href="#the-rule-structure" title="Permanent link">&para;</a></h2>
+<p>Each JSON file must contain a JSON Array <code>[]</code> of <strong>Generation Rules</strong>.</p>
+<p>Here is an example rule:</p>
+<pre><code class="language-json">[
+  {
+    &quot;bpName&quot;: &quot;ASD-Freighter&quot;,
+    &quot;entityName&quot;: &quot;Destroyed Freighter&quot;,
+    &quot;factionId&quot;: 0,
+    &quot;isWreck&quot;: true,
+    &quot;activateAi&quot;: false,
+    &quot;spawnChance&quot;: 12.0,
+    &quot;allowedSectorTypes&quot;: [&quot;planet&quot;],
+    &quot;minLootRolls&quot;: 2,
+    &quot;maxLootRolls&quot;: 5,
+    &quot;loot&quot;: [
+      {
+        &quot;itemName&quot;: &quot;SHIP_CORE&quot;,
+        &quot;minCount&quot;: 1,
+        &quot;maxCount&quot;: 3,
+        &quot;weight&quot;: 10
+      }
+    ]
+  }
+]
+</code></pre>
+<h3 id="generationrule-properties">GenerationRule Properties<a class="headerlink" href="#generationrule-properties" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bpName</code></td>
+<td>String</td>
+<td>(Required)</td>
+<td>The exact name of the blueprint to load.</td>
+</tr>
+<tr>
+<td><code>entityName</code></td>
+<td>String</td>
+<td>(Required)</td>
+<td>The display name of the entity when it spawns.</td>
+</tr>
+<tr>
+<td><code>factionId</code></td>
+<td>Integer</td>
+<td><code>0</code></td>
+<td>The ID of the faction the entity belongs to. <code>0</code> is Neutral, <code>-1</code> is Pirate.</td>
+</tr>
+<tr>
+<td><code>isWreck</code></td>
+<td>Boolean</td>
+<td><code>true</code></td>
+<td>If <code>true</code>, the entity undergoes simulated explosive damage and becomes a salvageable wreckage.</td>
+</tr>
+<tr>
+<td><code>activateAi</code></td>
+<td>Boolean</td>
+<td><code>false</code></td>
+<td>If <code>true</code>, the entity's AI will be enabled (assuming it has the proper AI modules installed).</td>
+</tr>
+<tr>
+<td><code>spawnChance</code></td>
+<td>Float</td>
+<td><code>100.0</code></td>
+<td>A percentage chance (0.0 to 100.0) that this entity will spawn when the sector is generated.</td>
+</tr>
+<tr>
+<td><code>minDistance</code></td>
+<td>Integer</td>
+<td><code>-1</code></td>
+<td>The minimum distance from the system star for this entity to spawn. Ignored if <code>&lt; 0</code>.</td>
+</tr>
+<tr>
+<td><code>maxDistance</code></td>
+<td>Integer</td>
+<td><code>-1</code></td>
+<td>The maximum distance from the system star for this entity to spawn. Ignored if <code>&lt; 0</code>.</td>
+</tr>
+<tr>
+<td><code>minSector</code></td>
+<td>List[Integer]</td>
+<td><code>null</code></td>
+<td>A 3-coordinate array <code>[X, Y, Z]</code> specifying the minimum absolute sector boundaries (e.g., <code>[0, 0, 0]</code>).</td>
+</tr>
+<tr>
+<td><code>maxSector</code></td>
+<td>List[Integer]</td>
+<td><code>null</code></td>
+<td>A 3-coordinate array <code>[X, Y, Z]</code> specifying the maximum absolute sector boundaries (e.g., <code>[2, 2, 2]</code>).</td>
+</tr>
+<tr>
+<td><code>allowedSectorTypes</code></td>
+<td>List[String]</td>
+<td><code>null</code></td>
+<td>A list of valid sector types (e.g., <code>"planet"</code>, <code>"asteroid"</code>). If omitted, it can spawn anywhere.</td>
+</tr>
+<tr>
+<td><code>allowedStarColors</code></td>
+<td>List[String]</td>
+<td><code>null</code></td>
+<td>A list of valid star colors formatted as <code>"R, G, B"</code> (e.g. <code>"1.0, 0.0, 0.0"</code>). If omitted, any star color is valid.</td>
+</tr>
+<tr>
+<td><code>minLootRolls</code></td>
+<td>Integer</td>
+<td><code>-1</code></td>
+<td>The minimum number of pulls to make from the loot pool. See <a href="../loot_pools/">Loot Pools</a> for details.</td>
+</tr>
+<tr>
+<td><code>maxLootRolls</code></td>
+<td>Integer</td>
+<td><code>-1</code></td>
+<td>The maximum number of pulls to make from the loot pool.</td>
+</tr>
+<tr>
+<td><code>loot</code></td>
+<td>List[LootRule]</td>
+<td><code>null</code></td>
+<td>An array of items that can spawn in the entity's inventories.</td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../loot_pools/" class="btn btn-neutral float-right" title="Loot Pools & Weights">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../loot_pools/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

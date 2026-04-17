@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Loot Pools & Weights - LorefulLoot</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Loot Pools \u0026 Weights";
+        var mkdocs_page_input_path = "loot_pools.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> LorefulLoot
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../configuration/">Generation JSON Configuration</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Loot Pools & Weights</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#weighted-roll-system">Weighted Roll System</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#example">Example</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#guaranteed-system-no-rolls">Guaranteed System (No Rolls)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#lootrule-properties">LootRule Properties</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#meta-item-examples">Meta-Item Examples</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">LorefulLoot</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Loot Pools & Weights</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="loot-pools-weights">Loot Pools &amp; Weights<a class="headerlink" href="#loot-pools-weights" title="Permanent link">&para;</a></h1>
+<p>LorefulLoot supports two types of item allocation for your spawned entities: <strong>Guaranteed</strong> and <strong>Weighted</strong>.</p>
+<p>This is controlled by the <code>minLootRolls</code> and <code>maxLootRolls</code> parameters in your <code>GenerationRule</code>.</p>
+<h2 id="weighted-roll-system">Weighted Roll System<a class="headerlink" href="#weighted-roll-system" title="Permanent link">&para;</a></h2>
+<p>If you define <code>minLootRolls</code> and <code>maxLootRolls</code> (e.g., <code>min: 2</code>, <code>max: 5</code>), the mod uses an RPG-style weighted pool.</p>
+<ol>
+<li>It picks a random number of "rolls" between your min and max.</li>
+<li>For every roll, it adds up the <code>weight</code> of all items in the <code>loot</code> array.</li>
+<li>It picks a random number up to that total weight and selects the winning item.</li>
+<li>It randomizes the stack size of that winning item between its <code>minCount</code> and <code>maxCount</code>.</li>
+</ol>
+<h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
+<pre><code class="language-json">&quot;minLootRolls&quot;: 2,
+&quot;maxLootRolls&quot;: 4,
+&quot;loot&quot;: [
+  {
+    &quot;itemName&quot;: &quot;SHIP_CORE&quot;,
+    &quot;minCount&quot;: 1,
+    &quot;maxCount&quot;: 1,
+    &quot;weight&quot;: 10
+  }
+]
+</code></pre>
+<h2 id="guaranteed-system-no-rolls">Guaranteed System (No Rolls)<a class="headerlink" href="#guaranteed-system-no-rolls" title="Permanent link">&para;</a></h2>
+<p>If you omit <code>minLootRolls</code> and <code>maxLootRolls</code> (or leave them at <code>-1</code>), the mod will spawn <strong>EVERY</strong> item defined in the <code>loot</code> array. </p>
+<p>It will still respect the <code>minCount</code> and <code>maxCount</code> constraints to randomize the stack sizes, but the <code>weight</code> property is ignored.</p>
+<h3 id="lootrule-properties">LootRule Properties<a class="headerlink" href="#lootrule-properties" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>itemName</code></td>
+<td>String</td>
+<td>(Required)</td>
+<td>The internal ID name of the StarMade item (e.g. <code>STEAK</code>, <code>SHIP_CORE</code>). Ignored for logbooks and weapons — see <code>text</code> and <code>subtype</code>.</td>
+</tr>
+<tr>
+<td><code>minCount</code></td>
+<td>Integer</td>
+<td><code>1</code></td>
+<td>The minimum amount of this item to spawn in a single stack.</td>
+</tr>
+<tr>
+<td><code>maxCount</code></td>
+<td>Integer</td>
+<td><code>1</code></td>
+<td>The maximum amount of this item to spawn in a single stack.</td>
+</tr>
+<tr>
+<td><code>count</code></td>
+<td>Integer</td>
+<td><code>-1</code></td>
+<td>Hard override. If set, ignores min/max and spawns exactly this amount.</td>
+</tr>
+<tr>
+<td><code>weight</code></td>
+<td>Integer</td>
+<td><code>1</code></td>
+<td>The relative chance of this item being picked during a weighted loot roll.</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td>String</td>
+<td><code>null</code></td>
+<td>If set, spawns a <strong>Logbook</strong> meta-item with this string as its contents. Overrides <code>itemName</code>.</td>
+</tr>
+<tr>
+<td><code>subtype</code></td>
+<td>String</td>
+<td><code>null</code></td>
+<td>If set, spawns a <strong>Weapon</strong> meta-item of this subtype (e.g. <code>PISTOL</code>). Overrides <code>itemName</code>. Takes precedence over <code>itemName</code> but is overridden by <code>text</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="meta-item-examples">Meta-Item Examples<a class="headerlink" href="#meta-item-examples" title="Permanent link">&para;</a></h3>
+<p><strong>Logbook</strong> — spawns a readable logbook with custom lore text:</p>
+<pre><code class="language-json">{
+  &quot;text&quot;: &quot;Day 47. The engines are dead and we're drifting. If anyone finds this...&quot;,
+  &quot;weight&quot;: 5
+}
+</code></pre>
+<p><strong>Weapon</strong> — spawns a weapon of the specified subtype:</p>
+<pre><code class="language-json">{
+  &quot;subtype&quot;: &quot;PISTOL&quot;,
+  &quot;count&quot;: 1,
+  &quot;weight&quot;: 8
+}
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../configuration/" class="btn btn-neutral float-left" title="Generation JSON Configuration"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../configuration/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
