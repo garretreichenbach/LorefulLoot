@@ -27,7 +27,6 @@ If you define `minLootRolls` and `maxLootRolls` (e.g., `min: 2`, `max: 5`), the 
   }
 ]
 ```
-*In this example, Steak has the highest drop weight (50) and is most likely to be chosen on each roll, dropping between 5 and 20 steaks.*
 
 ## Guaranteed System (No Rolls)
 
