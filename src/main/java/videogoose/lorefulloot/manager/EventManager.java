@@ -7,14 +7,16 @@ import api.listener.fastevents.FastListenerCommon;
 import api.mod.StarLoader;
 import videogoose.lorefulloot.LorefulLoot;
 import videogoose.lorefulloot.listener.SectorGenerateEventListener;
+import videogoose.lorefulloot.listener.SectorLoadEventListener;
 
 public class EventManager {
 
 
 	public static void initialize(LorefulLoot instance) {
 		FastListenerCommon.sectorGenerateListeners.add(new SectorGenerateEventListener());
+		FastListenerCommon.sectorLoadListeners.add(new SectorLoadEventListener());
 
-		StarLoader.registerListener(SegmentControllerOverheatEvent.class, new Listener<SegmentControllerOverheatEvent>() {
+		StarLoader.registerListener(SegmentControllerOverheatEvent.class, new Listener<>() {
 			@Override
 			public void onEvent(SegmentControllerOverheatEvent event) {
 				if(ConfigManager.getMainConfig().getBoolean("generate-shipwrecks-from-combat")) {
@@ -27,7 +29,7 @@ public class EventManager {
 			}
 		}, instance);
 
-		StarLoader.registerListener(SegmentPieceSalvageCheckEvent.class, new Listener<SegmentPieceSalvageCheckEvent>() {
+		StarLoader.registerListener(SegmentPieceSalvageCheckEvent.class, new Listener<>() {
 			@Override
 			public void onEvent(SegmentPieceSalvageCheckEvent event) {
 				if(WreckageManager.canSalvage(event.getController().getUniqueIdentifier())) {

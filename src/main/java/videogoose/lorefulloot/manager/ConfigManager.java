@@ -11,7 +11,8 @@ public class ConfigManager {
 			"max-world-logs: 5",
 			"generate-shipwrecks-from-combat: true",
 			"combat-wreck-chance: 25",
-			"combat-wreck-min-mass: 1000"
+			"combat-wreck-min-mass: 1000",
+			"generation-player-range: 2"
 	};
 
 	public static void initialize(LorefulLoot instance) {

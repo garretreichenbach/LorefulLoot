@@ -1,0 +1,39 @@
+[
+	{
+		"bpName": "T180-18 mk2",
+		"entityName": "Destroyed Transport",
+		"factionId": 0,
+		"isWreck": true,
+		"activateAi": false,
+		"spawnChance": 12.0,
+		"minLootRolls": 2,
+		"maxLootRolls": 5,
+		"allowedSectorTypes": ["planet"],
+		"loot": [
+			{
+				"itemName": "SHIP_CORE",
+				"minCount": 1,
+				"maxCount": 3,
+				"weight": 10
+			}
+		]
+	},
+	{
+		"bpName": "Isanth Type-PNR-25-C",
+		"entityName": "Pirate Scavengers",
+		"factionId": -1,
+		"isWreck": false,
+		"activateAi": true,
+		"spawnChance": 8.5,
+		"allowedSectorTypes": ["planet"]
+	},
+	{
+		"bpName": "Isanth Type-PNR-25-M",
+		"entityName": "Pirate Scavengers",
+		"factionId": -1,
+		"isWreck": false,
+		"activateAi": true,
+		"spawnChance": 5.0,
+		"allowedSectorTypes": ["planet"]
+	}
+]

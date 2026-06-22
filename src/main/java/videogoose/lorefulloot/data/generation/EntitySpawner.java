@@ -20,8 +20,11 @@ import videogoose.lorefulloot.utils.MiscUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class EntitySpawner {
+
+	private static final AtomicLong SPAWN_SEQUENCE = new AtomicLong();
 
 	private static ItemStack buildItemStack(LootRule lr, int count) {
 		if(lr.getText() != null && !lr.getText().isEmpty()) {
@@ -37,7 +40,8 @@ public class EntitySpawner {
 		SegmentControllerOutline<?> scOutline = null;
 
 		int factionId = rule.getFactionId();
-		String spawnName = rule.isWreck() ? rule.getEntityName() + " [Wreckage]" : rule.getEntityName() + "_" + System.currentTimeMillis();
+		String uniqueToken = System.currentTimeMillis() + "_" + SPAWN_SEQUENCE.incrementAndGet();
+		String spawnName = rule.isWreck() ? rule.getEntityName() + " [Wreckage] " + uniqueToken : rule.getEntityName() + "_" + uniqueToken;
 
 		try {
 			scOutline = BluePrintController.active.loadBluePrint(GameServerState.instance, rule.getBpName(), spawnName, GenerationManager.getRandomTransformInSector(), -1, factionId, sectorPos, "LorefulLoot", PlayerState.buffer, null, false, new ChildStats(false));
